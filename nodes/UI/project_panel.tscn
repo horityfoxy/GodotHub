@@ -1,0 +1,157 @@
+[gd_scene format=3 uid="uid://cdm35govyflcd"]
+
+[ext_resource type="Texture2D" uid="uid://bx40bofn7yy27" path="res://icon.svg" id="1_q602k"]
+
+[sub_resource type="GDScript" id="GDScript_uyqn0"]
+script/source = "extends panel_base
+
+@export var _edit_button : Button
+@export var _run_button : Button
+
+var _project_path : String = \"\"
+var _godot_path : String = \"\"
+var _version : String = \"\"
+
+func _ready() -> void:
+	if _edit_button: _edit_button.pressed.connect(_edit_project)
+	if _run_button: _run_button.pressed.connect(_run_project)
+
+func set_godot_path(value : String) -> void:
+	_godot_path = value
+
+func set_project_path(value : String) -> void:
+	_project_path = value
+
+func set_version(value : String) -> void:
+	_version = value
+
+func remove():
+	print(\"obj has removed!\")
+	super()
+
+func _edit_project():
+	launch_project_in_editor([\"--path\", _project_path, \"-e\"])
+
+func _run_project():
+	launch_project_in_editor([\"--path\", _project_path])
+
+func launch_project_in_editor(_args : PackedStringArray) -> void:
+	if not FileAccess.file_exists(_godot_path):
+		printerr(\"ERROR: Executable file not found: \", _godot_path)
+		return
+	
+	if _project_path == \"\":
+		printerr(\"ERROR: Project path is empty!\")
+		return
+	
+	var pid: int = OS.create_process(_godot_path, _args)
+	if pid > 0: 
+		if _args.has(\"-e\"): get_tree().quit()
+	else: printerr(\"ERROR: Failed to launch the project.\")
+"
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_y2wr3"]
+content_margin_left = 8.0
+content_margin_right = 8.0
+bg_color = Color(0.9144508, 0, 0.17358607, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_a3ry3"]
+bg_color = Color(0.07450981, 0.52156866, 0.22745098, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_k8dvw"]
+content_margin_left = 8.0
+content_margin_right = 8.0
+bg_color = Color(0.25882354, 0.25882354, 0.25882354, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[node name="project_1" type="Panel" unique_id=426653167 node_paths=PackedStringArray("_edit_button", "_run_button", "_label_name", "_icon_texture", "_remove_button")]
+custom_minimum_size = Vector2(0, 72)
+script = SubResource("GDScript_uyqn0")
+_edit_button = NodePath("HBoxContainer/edit_project")
+_run_button = NodePath("HBoxContainer/run_project")
+_label_name = NodePath("HBoxContainer/name")
+_icon_texture = NodePath("HBoxContainer/icon")
+_remove_button = NodePath("HBoxContainer/remove_project")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=1006314450]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = -9.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 12
+
+[node name="icon" type="TextureRect" parent="HBoxContainer" unique_id=416449460]
+custom_minimum_size = Vector2(56, 56)
+layout_mode = 2
+texture = ExtResource("1_q602k")
+expand_mode = 4
+stretch_mode = 5
+
+[node name="name" type="Label" parent="HBoxContainer" unique_id=541838067]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+text = "Какой-то проект #1"
+clip_text = true
+
+[node name="remove_project" type="Button" parent="HBoxContainer" unique_id=293727372]
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_y2wr3")
+text = "Удалить"
+
+[node name="version" type="Label" parent="HBoxContainer" unique_id=1447274246]
+z_index = 1
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = " 4.4.1 "
+
+[node name="panel" type="Panel" parent="HBoxContainer/version" unique_id=401359081]
+z_index = -1
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 1
+anchors_preset = 14
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_a3ry3")
+
+[node name="edit_project" type="Button" parent="HBoxContainer" unique_id=1796640064]
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_k8dvw")
+text = "Редактировать"
+
+[node name="run_project" type="Button" parent="HBoxContainer" unique_id=333768654]
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_k8dvw")
+text = "Запустить"

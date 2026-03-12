@@ -1,41 +1,24 @@
 [gd_scene format=3 uid="uid://bn5m56kyvj02p"]
 
 [ext_resource type="Texture2D" uid="uid://dtwh3afljtusf" path="res://src/sprites/settings/settings_logo.svg" id="1_xpfdc"]
+[ext_resource type="PackedScene" uid="uid://cdm35govyflcd" path="res://nodes/UI/project_panel.tscn" id="2_a3ry3"]
 
 [sub_resource type="GDScript" id="GDScript_pel7g"]
 script/source = "extends CanvasLayer
 
-# Example usage:
-# func _ready() -> void:
-	#To launch a specific project:
-	#launch_godot(\"C:/Path/To/Godot.exe\", \"C:/Path/To/Project\")
-	#
-	# To launch just the engine (Project Manager):
-	#launch_godot(\"C:/Path/To/Godot.exe\", \"\")
-
-func launch_godot(godot_path: String, project_dir: String = \"\") -> void:
-	# Check if the executable exists
+func launch_editor_only(godot_path: String) -> void:
+	# Проверка наличия файла
 	if not FileAccess.file_exists(godot_path):
-		printerr(\"ERROR: Godot executable not found at: \", godot_path)
+		printerr(\"ОШИБКА: Исполняемый файл не найден: \", godot_path)
 		return
 	
-	var args: PackedStringArray = []
-	
-	# Check if we need to open a specific project or just the Project Manager
-	if project_dir != \"\":
-		args.append(\"--path\")
-		args.append(project_dir)
-		args.append(\"-e\") # Opens the editor directly
-	
-	# Start the process without blocking the hub
-	var pid: int = OS.create_process(godot_path, args)
+	# Запуск без аргументов открывает список проектов
+	var pid: int = OS.create_process(godot_path, [])
 	
 	if pid > 0:
-		print(\"Process started successfully. PID: \", pid)
-		# Close the Hub application to save resources
-		get_tree().quit()
+		get_tree().quit() # Закрыть хаб после успеха
 	else:
-		printerr(\"ERROR: Failed to launch the process.\")
+		printerr(\"ОШИБКА: Не удалось запустить редактор.\")
 "
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_y2wr3"]
@@ -60,13 +43,6 @@ corner_radius_bottom_left = 4
 content_margin_left = 8.0
 content_margin_right = 8.0
 bg_color = Color(0.54901963, 0.5019608, 0.8862745, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_a3ry3"]
-bg_color = Color(0.07450981, 0.52156866, 0.22745098, 1)
 corner_radius_top_left = 4
 corner_radius_top_right = 4
 corner_radius_bottom_right = 4
@@ -184,6 +160,7 @@ layout_mode = 2
 size_flags_vertical = 3
 
 [node name="versions" type="Control" parent="layout/body" unique_id=1081391640]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -265,7 +242,6 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_pel7g")
 text = "Загрузить новую версию"
 
 [node name="projects" type="Control" parent="layout/body" unique_id=1588472335]
-visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -286,70 +262,8 @@ grow_vertical = 2
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="project_1" type="Panel" parent="layout/body/projects/ScrollContainer/VBoxContainer" unique_id=537547992]
-custom_minimum_size = Vector2(0, 72)
+[node name="project_1" parent="layout/body/projects/ScrollContainer/VBoxContainer" unique_id=426653167 instance=ExtResource("2_a3ry3")]
 layout_mode = 2
-
-[node name="HBoxContainer" type="HBoxContainer" parent="layout/body/projects/ScrollContainer/VBoxContainer/project_1" unique_id=1276344121]
-custom_minimum_size = Vector2(0, 56)
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 8.0
-offset_top = 8.0
-offset_right = -9.0
-offset_bottom = -8.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_constants/separation = 12
-
-[node name="icon" type="ColorRect" parent="layout/body/projects/ScrollContainer/VBoxContainer/project_1/HBoxContainer" unique_id=512580341]
-custom_minimum_size = Vector2(56, 56)
-layout_mode = 2
-
-[node name="name" type="Label" parent="layout/body/projects/ScrollContainer/VBoxContainer/project_1/HBoxContainer" unique_id=626532829]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 14
-text = "Какой-то проект #1"
-clip_text = true
-
-[node name="remove_project" type="Button" parent="layout/body/projects/ScrollContainer/VBoxContainer/project_1/HBoxContainer" unique_id=86542108]
-custom_minimum_size = Vector2(0, 24)
-layout_mode = 2
-size_flags_vertical = 4
-theme_override_font_sizes/font_size = 14
-theme_override_styles/normal = SubResource("StyleBoxFlat_y2wr3")
-text = "Удалить"
-
-[node name="version" type="Label" parent="layout/body/projects/ScrollContainer/VBoxContainer/project_1/HBoxContainer" unique_id=399514772]
-z_index = 1
-layout_mode = 2
-theme_override_font_sizes/font_size = 14
-text = " 4.4.1 "
-
-[node name="panel" type="Panel" parent="layout/body/projects/ScrollContainer/VBoxContainer/project_1/HBoxContainer/version" unique_id=888821100]
-z_index = -1
-custom_minimum_size = Vector2(0, 24)
-layout_mode = 1
-anchors_preset = 14
-anchor_top = 0.5
-anchor_right = 1.0
-anchor_bottom = 0.5
-grow_horizontal = 2
-grow_vertical = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
-theme_override_styles/panel = SubResource("StyleBoxFlat_a3ry3")
-
-[node name="edit_project" type="Button" parent="layout/body/projects/ScrollContainer/VBoxContainer/project_1/HBoxContainer" unique_id=1696213386]
-custom_minimum_size = Vector2(0, 24)
-layout_mode = 2
-size_flags_vertical = 4
-theme_override_font_sizes/font_size = 14
-theme_override_styles/normal = SubResource("StyleBoxFlat_k8dvw")
-text = "Редактировать"
 
 [node name="add_project" type="Button" parent="layout/body/projects" unique_id=1084465341]
 layout_mode = 1
