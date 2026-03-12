@@ -2,6 +2,15 @@
 
 [ext_resource type="Texture2D" uid="uid://dtwh3afljtusf" path="res://src/sprites/settings/settings_logo.svg" id="1_xpfdc"]
 [ext_resource type="PackedScene" uid="uid://cdm35govyflcd" path="res://nodes/UI/project_panel.tscn" id="2_a3ry3"]
+[ext_resource type="StyleBox" uid="uid://bu64x5yv714fq" path="res://src/themes/horityfox/buttons/green/normal.tres" id="3_6s2ku"]
+[ext_resource type="StyleBox" uid="uid://08qpf6v4ihhn" path="res://src/themes/horityfox/panels/project_panels.tres" id="3_7aemw"]
+[ext_resource type="StyleBox" uid="uid://caklaygw7x3wc" path="res://src/themes/horityfox/buttons/gray/normal.tres" id="3_gp064"]
+[ext_resource type="Shader" uid="uid://buyvb3en62nqv" path="res://scripts/shaders/blur_background.gdshader" id="3_k8dvw"]
+[ext_resource type="Texture2D" uid="uid://bx40bofn7yy27" path="res://icon.svg" id="3_rshm7"]
+[ext_resource type="Texture2D" uid="uid://e7wkwvbepdoa" path="res://src/sprites/drag_and_drop/drag_and_drop_icon.svg" id="3_ufc4x"]
+[ext_resource type="StyleBox" uid="uid://p58b3mqkmpwp" path="res://src/themes/horityfox/buttons/blue/normal.tres" id="4_pmn7o"]
+[ext_resource type="StyleBox" uid="uid://bm2eusnrvc8qe" path="res://src/themes/horityfox/panels/window_drag_and_drop.tres" id="4_y2wr3"]
+[ext_resource type="StyleBox" uid="uid://uuj5ruxop1m6" path="res://src/themes/horityfox/buttons/red/normal.tres" id="7_gp064"]
 
 [sub_resource type="GDScript" id="GDScript_pel7g"]
 script/source = "extends CanvasLayer
@@ -21,41 +30,19 @@ func launch_editor_only(godot_path: String) -> void:
 		printerr(\"ОШИБКА: Не удалось запустить редактор.\")
 "
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_y2wr3"]
-content_margin_left = 8.0
-content_margin_right = 8.0
-bg_color = Color(0.9144508, 0, 0.17358607, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_a3ry3"]
+bg_color = Color(0.09019608, 0.09019608, 0.09019608, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_k8dvw"]
-content_margin_left = 8.0
-content_margin_right = 8.0
-bg_color = Color(0.25882354, 0.25882354, 0.25882354, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
+[sub_resource type="Theme" id="Theme_ufc4x"]
+Panel/styles/panel = SubResource("StyleBoxFlat_a3ry3")
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pel7g"]
-content_margin_left = 8.0
-content_margin_right = 8.0
-bg_color = Color(0.54901963, 0.5019608, 0.8862745, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xpfdc"]
-content_margin_left = 8.0
-content_margin_right = 8.0
-bg_color = Color(0.07579438, 0.5227278, 0.22718632, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_y2wr3"]
+shader = ExtResource("3_k8dvw")
+shader_parameter/blur_amount = 1.50000007125
 
 [node name="main" type="CanvasLayer" unique_id=2071414279]
 script = SubResource("GDScript_pel7g")
@@ -64,6 +51,10 @@ script = SubResource("GDScript_pel7g")
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = -74.0
+offset_top = -70.0
+offset_right = 74.0
+offset_bottom = 70.0
 grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.078431375, 0.078431375, 0.078431375, 1)
@@ -136,24 +127,26 @@ toggle_mode = true
 text = "  Проекты  "
 flat = true
 
-[node name="settings" type="TextureRect" parent="layout/header" unique_id=1972600518]
-modulate = Color(0.38039216, 0.38039216, 0.38039216, 1)
+[node name="settings" type="Button" parent="layout/header" unique_id=1220451796]
 custom_minimum_size = Vector2(24, 24)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
-texture = ExtResource("1_xpfdc")
-expand_mode = 2
-stretch_mode = 5
+theme_override_styles/normal = ExtResource("3_gp064")
 
-[node name="Button" type="Button" parent="layout/header/settings" unique_id=1136833669]
+[node name="icon" type="TextureRect" parent="layout/header/settings" unique_id=633796110]
+modulate = Color(0.585062, 0.585062, 0.58506197, 1)
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 6.0
+offset_right = -6.0
 grow_horizontal = 2
 grow_vertical = 2
-flat = true
+texture = ExtResource("1_xpfdc")
+expand_mode = 4
+stretch_mode = 5
 
 [node name="body" type="Control" parent="layout" unique_id=1831959156]
 layout_mode = 2
@@ -180,10 +173,12 @@ grow_vertical = 2
 [node name="VBoxContainer" type="VBoxContainer" parent="layout/body/versions/ScrollContainer" unique_id=2052246253]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_constants/separation = 8
 
 [node name="version_1" type="Panel" parent="layout/body/versions/ScrollContainer/VBoxContainer" unique_id=756876243]
 custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
+theme_override_styles/panel = ExtResource("3_7aemw")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="layout/body/versions/ScrollContainer/VBoxContainer/version_1" unique_id=457361546]
 custom_minimum_size = Vector2(0, 56)
@@ -199,9 +194,12 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 12
 
-[node name="ColorRect" type="ColorRect" parent="layout/body/versions/ScrollContainer/VBoxContainer/version_1/HBoxContainer" unique_id=216693582]
+[node name="ColorRect" type="TextureRect" parent="layout/body/versions/ScrollContainer/VBoxContainer/version_1/HBoxContainer" unique_id=1730990907]
 custom_minimum_size = Vector2(56, 56)
 layout_mode = 2
+texture = ExtResource("3_rshm7")
+expand_mode = 4
+stretch_mode = 5
 
 [node name="Label" type="Label" parent="layout/body/versions/ScrollContainer/VBoxContainer/version_1/HBoxContainer" unique_id=1030153479]
 layout_mode = 2
@@ -215,7 +213,7 @@ custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
 size_flags_vertical = 4
 theme_override_font_sizes/font_size = 14
-theme_override_styles/normal = SubResource("StyleBoxFlat_y2wr3")
+theme_override_styles/normal = ExtResource("7_gp064")
 text = "Удалить"
 
 [node name="edit_project" type="Button" parent="layout/body/versions/ScrollContainer/VBoxContainer/version_1/HBoxContainer" unique_id=1260078518]
@@ -223,7 +221,7 @@ custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
 size_flags_vertical = 4
 theme_override_font_sizes/font_size = 14
-theme_override_styles/normal = SubResource("StyleBoxFlat_k8dvw")
+theme_override_styles/normal = ExtResource("3_gp064")
 text = "Запустить"
 
 [node name="get_new_version" type="Button" parent="layout/body/versions" unique_id=486015608]
@@ -233,12 +231,13 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -4.0
-offset_top = -8.0
-offset_right = 4.0
+offset_left = -110.0
+offset_top = -21.0
+offset_right = 110.0
+offset_bottom = 4.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_styles/normal = SubResource("StyleBoxFlat_pel7g")
+theme_override_styles/normal = ExtResource("4_pmn7o")
 text = "Загрузить новую версию"
 
 [node name="projects" type="Control" parent="layout/body" unique_id=1588472335]
@@ -261,6 +260,7 @@ grow_vertical = 2
 [node name="VBoxContainer" type="VBoxContainer" parent="layout/body/projects/ScrollContainer" unique_id=622089978]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_constants/separation = 8
 
 [node name="project_1" parent="layout/body/projects/ScrollContainer/VBoxContainer" unique_id=426653167 instance=ExtResource("2_a3ry3")]
 layout_mode = 2
@@ -272,12 +272,13 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -4.0
-offset_top = -8.0
-offset_right = 4.0
+offset_left = -109.5
+offset_top = -21.0
+offset_right = 109.5
+offset_bottom = 4.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_styles/normal = SubResource("StyleBoxFlat_xpfdc")
+theme_override_styles/normal = ExtResource("3_6s2ku")
 text = "Добавить проект с диска"
 
 [node name="footer" type="HBoxContainer" parent="layout" unique_id=1092806049]
@@ -285,11 +286,266 @@ custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
 alignment = 1
 
-[node name="Label" type="Label" parent="layout/footer" unique_id=1444040752]
+[node name="copyright" type="Label" parent="layout/footer" unique_id=1444040752]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.25882354, 0.25882354, 0.25882354, 1)
 theme_override_font_sizes/font_size = 10
-text = "Создал HorityFox для сообщества Godot Engine"
+text = "Создано HorityFox для сообщества Godot Engine"
 horizontal_alignment = 1
 uppercase = true
+
+[node name="popup_window" type="Control" parent="." unique_id=182114234]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("Theme_ufc4x")
+
+[node name="bg" type="ColorRect" parent="popup_window" unique_id=644468900]
+z_index = 1
+material = SubResource("ShaderMaterial_y2wr3")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.03529412, 0.03529412, 0.03529412, 0.3372549)
+
+[node name="drag_and_drop" type="Control" parent="popup_window" unique_id=1795121393]
+z_index = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="Panel" parent="popup_window/drag_and_drop" unique_id=1528090570]
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 285.0
+offset_top = 149.0
+offset_right = -285.0
+offset_bottom = -149.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = ExtResource("4_y2wr3")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="popup_window/drag_and_drop/Panel" unique_id=916510419]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 12.0
+offset_bottom = -12.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Label" type="Label" parent="popup_window/drag_and_drop/Panel/VBoxContainer" unique_id=165494374]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65012825, 0.6501283, 0.65012825, 1)
+theme_override_font_sizes/font_size = 14
+text = "Переместите или сканируйте папку с проектами"
+horizontal_alignment = 1
+clip_text = true
+
+[node name="icon" type="Control" parent="popup_window/drag_and_drop/Panel/VBoxContainer" unique_id=204135268]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="TextureRect" type="TextureRect" parent="popup_window/drag_and_drop/Panel/VBoxContainer/icon" unique_id=531745612]
+modulate = Color(0.34407577, 0.34407577, 0.34407565, 1)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -65.0
+offset_top = -65.0
+offset_right = 65.0
+offset_bottom = 65.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("3_ufc4x")
+expand_mode = 4
+stretch_mode = 5
+
+[node name="HBoxContainer" type="HBoxContainer" parent="popup_window/drag_and_drop/Panel/VBoxContainer" unique_id=217887422]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="scan_project" type="Button" parent="popup_window/drag_and_drop/Panel/VBoxContainer/HBoxContainer" unique_id=695065214]
+layout_mode = 2
+theme_override_styles/normal = ExtResource("3_6s2ku")
+text = "Сканировать"
+
+[node name="close" type="Button" parent="popup_window/drag_and_drop/Panel/VBoxContainer/HBoxContainer" unique_id=2029715583]
+layout_mode = 2
+theme_override_styles/normal = ExtResource("7_gp064")
+text = "Закрыть"
+
+[node name="settings" type="Control" parent="popup_window" unique_id=1532549054]
+visible = false
+z_index = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="Panel" parent="popup_window/settings" unique_id=607638348]
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 285.0
+offset_top = 149.0
+offset_right = -285.0
+offset_bottom = -149.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = ExtResource("4_y2wr3")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="popup_window/settings/Panel" unique_id=292929761]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 12.0
+offset_right = -20.0
+offset_bottom = -12.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Label" type="Label" parent="popup_window/settings/Panel/VBoxContainer" unique_id=1036067533]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65012825, 0.6501283, 0.65012825, 1)
+theme_override_font_sizes/font_size = 14
+text = "Настройки"
+horizontal_alignment = 1
+clip_text = true
+
+[node name="VBoxContainer" type="VBoxContainer" parent="popup_window/settings/Panel/VBoxContainer" unique_id=534078114]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="language" type="HBoxContainer" parent="popup_window/settings/Panel/VBoxContainer/VBoxContainer" unique_id=1534520518]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="popup_window/settings/Panel/VBoxContainer/VBoxContainer/language" unique_id=1707943281]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Язык"
+
+[node name="OptionButton" type="OptionButton" parent="popup_window/settings/Panel/VBoxContainer/VBoxContainer/language" unique_id=1569932035]
+layout_mode = 2
+alignment = 2
+selected = 0
+item_count = 4
+popup/item_0/text = "Русский"
+popup/item_0/id = 0
+popup/item_1/text = "Английский"
+popup/item_1/id = 1
+popup/item_2/text = "Японский"
+popup/item_2/id = 2
+popup/item_3/text = "Немецкий"
+popup/item_3/id = 3
+
+[node name="theme" type="HBoxContainer" parent="popup_window/settings/Panel/VBoxContainer/VBoxContainer" unique_id=1705096437]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="popup_window/settings/Panel/VBoxContainer/VBoxContainer/theme" unique_id=185104013]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Тема"
+
+[node name="OptionButton" type="OptionButton" parent="popup_window/settings/Panel/VBoxContainer/VBoxContainer/theme" unique_id=297769814]
+layout_mode = 2
+alignment = 2
+selected = 0
+item_count = 1
+popup/item_0/text = "HorityFox"
+popup/item_0/id = 0
+
+[node name="HBoxContainer" type="HBoxContainer" parent="popup_window/settings/Panel/VBoxContainer" unique_id=1776253442]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="close" type="Button" parent="popup_window/settings/Panel/VBoxContainer/HBoxContainer" unique_id=1872791804]
+layout_mode = 2
+theme_override_styles/normal = ExtResource("7_gp064")
+text = "Закрыть"
+
+[node name="accept_window" type="Control" parent="popup_window" unique_id=340021065]
+visible = false
+z_index = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="Panel" parent="popup_window/accept_window" unique_id=1575082110]
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 487.0
+offset_top = 244.0
+offset_right = -487.0
+offset_bottom = -244.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = ExtResource("4_y2wr3")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="popup_window/accept_window/Panel" unique_id=836335441]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 33.0
+offset_top = 9.0
+offset_right = -33.0
+offset_bottom = -9.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Label" type="Label" parent="popup_window/accept_window/Panel/VBoxContainer" unique_id=968356342]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65012825, 0.6501283, 0.65012825, 1)
+theme_override_font_sizes/font_size = 14
+text = "Вы уверены?"
+horizontal_alignment = 1
+clip_text = true
+
+[node name="separator" type="Control" parent="popup_window/accept_window/Panel/VBoxContainer" unique_id=476132989]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="HBoxContainer" type="VBoxContainer" parent="popup_window/accept_window/Panel/VBoxContainer" unique_id=161975887]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="scan_project" type="Button" parent="popup_window/accept_window/Panel/VBoxContainer/HBoxContainer" unique_id=575387094]
+layout_mode = 2
+theme_override_styles/normal = ExtResource("3_6s2ku")
+text = "Нет"
+
+[node name="close" type="Button" parent="popup_window/accept_window/Panel/VBoxContainer/HBoxContainer" unique_id=1636238717]
+layout_mode = 2
+theme_override_styles/normal = ExtResource("7_gp064")
+text = "Да"

@@ -1,3 +1,6 @@
-res://nodes/UI/project_panel.tscn
-res://scripts/panel_base.gd
 res://nodes/main.tscn
+res://nodes/UI/project_panel.tscn
+res://scripts/shaders/blur_background.gdshader
+res://src/themes/buttons/blue/normal.tres
+res://src/themes/buttons/green/normal.tres
+res://src/themes/window_drag_and_drop.tres
