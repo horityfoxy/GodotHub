@@ -1,6 +1,88 @@
 [gd_scene format=3 uid="uid://bn5m56kyvj02p"]
 
+[ext_resource type="Texture2D" uid="uid://dtwh3afljtusf" path="res://src/sprites/settings/settings_logo.svg" id="1_xpfdc"]
+
+[sub_resource type="GDScript" id="GDScript_pel7g"]
+script/source = "extends CanvasLayer
+
+# Example usage:
+# func _ready() -> void:
+	#To launch a specific project:
+	#launch_godot(\"C:/Path/To/Godot.exe\", \"C:/Path/To/Project\")
+	#
+	# To launch just the engine (Project Manager):
+	#launch_godot(\"C:/Path/To/Godot.exe\", \"\")
+
+func launch_godot(godot_path: String, project_dir: String = \"\") -> void:
+	# Check if the executable exists
+	if not FileAccess.file_exists(godot_path):
+		printerr(\"ERROR: Godot executable not found at: \", godot_path)
+		return
+	
+	var args: PackedStringArray = []
+	
+	# Check if we need to open a specific project or just the Project Manager
+	if project_dir != \"\":
+		args.append(\"--path\")
+		args.append(project_dir)
+		args.append(\"-e\") # Opens the editor directly
+	
+	# Start the process without blocking the hub
+	var pid: int = OS.create_process(godot_path, args)
+	
+	if pid > 0:
+		print(\"Process started successfully. PID: \", pid)
+		# Close the Hub application to save resources
+		get_tree().quit()
+	else:
+		printerr(\"ERROR: Failed to launch the process.\")
+"
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_y2wr3"]
+content_margin_left = 8.0
+content_margin_right = 8.0
+bg_color = Color(0.9144508, 0, 0.17358607, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_k8dvw"]
+content_margin_left = 8.0
+content_margin_right = 8.0
+bg_color = Color(0.25882354, 0.25882354, 0.25882354, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pel7g"]
+content_margin_left = 8.0
+content_margin_right = 8.0
+bg_color = Color(0.54901963, 0.5019608, 0.8862745, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_a3ry3"]
+bg_color = Color(0.07450981, 0.52156866, 0.22745098, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xpfdc"]
+content_margin_left = 8.0
+content_margin_right = 8.0
+bg_color = Color(0.07579438, 0.5227278, 0.22718632, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
 [node name="main" type="CanvasLayer" unique_id=2071414279]
+script = SubResource("GDScript_pel7g")
 
 [node name="background_color" type="ColorRect" parent="." unique_id=1187307622]
 anchors_preset = 15
@@ -9,3 +91,291 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.078431375, 0.078431375, 0.078431375, 1)
+
+[node name="layout" type="VBoxContainer" parent="." unique_id=290828114]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 13.0
+offset_right = -10.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="header" type="HBoxContainer" parent="layout" unique_id=612383905]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="spacer" type="ColorRect" parent="layout/header" unique_id=394431728]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+color = Color(0.078431375, 0.078431375, 0.078431375, 0)
+
+[node name="versions" type="Control" parent="layout/header" unique_id=176306662]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Button" type="Button" parent="layout/header/versions" unique_id=1388477591]
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -8.0
+offset_top = -4.0
+offset_bottom = 4.0
+grow_horizontal = 0
+grow_vertical = 2
+theme_override_font_sizes/font_size = 18
+toggle_mode = true
+text = "  Версии  "
+flat = true
+
+[node name="separator" type="ColorRect" parent="layout/header" unique_id=739218975]
+custom_minimum_size = Vector2(2, 24)
+layout_mode = 2
+size_flags_vertical = 4
+color = Color(0.25882354, 0.25882354, 0.25882354, 1)
+
+[node name="projects" type="Control" parent="layout/header" unique_id=608809357]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Button" type="Button" parent="layout/header/projects" unique_id=300001126]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_top = -15.5
+offset_right = 83.0
+offset_bottom = 15.5
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.3817033, 0.38170323, 0.38170335, 1)
+theme_override_font_sizes/font_size = 18
+toggle_mode = true
+text = "  Проекты  "
+flat = true
+
+[node name="settings" type="TextureRect" parent="layout/header" unique_id=1972600518]
+modulate = Color(0.38039216, 0.38039216, 0.38039216, 1)
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+texture = ExtResource("1_xpfdc")
+expand_mode = 2
+stretch_mode = 5
+
+[node name="Button" type="Button" parent="layout/header/settings" unique_id=1136833669]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+flat = true
+
+[node name="body" type="Control" parent="layout" unique_id=1831959156]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="versions" type="Control" parent="layout/body" unique_id=1081391640]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="layout/body/versions" unique_id=1096962877]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_bottom = -44.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="layout/body/versions/ScrollContainer" unique_id=2052246253]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="version_1" type="Panel" parent="layout/body/versions/ScrollContainer/VBoxContainer" unique_id=756876243]
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="layout/body/versions/ScrollContainer/VBoxContainer/version_1" unique_id=457361546]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = -9.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 12
+
+[node name="ColorRect" type="ColorRect" parent="layout/body/versions/ScrollContainer/VBoxContainer/version_1/HBoxContainer" unique_id=216693582]
+custom_minimum_size = Vector2(56, 56)
+layout_mode = 2
+
+[node name="Label" type="Label" parent="layout/body/versions/ScrollContainer/VBoxContainer/version_1/HBoxContainer" unique_id=1030153479]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+text = "Godot engine 4.6.1 RC-1"
+clip_text = true
+
+[node name="remove_project" type="Button" parent="layout/body/versions/ScrollContainer/VBoxContainer/version_1/HBoxContainer" unique_id=593220055]
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_y2wr3")
+text = "Удалить"
+
+[node name="edit_project" type="Button" parent="layout/body/versions/ScrollContainer/VBoxContainer/version_1/HBoxContainer" unique_id=1260078518]
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_k8dvw")
+text = "Запустить"
+
+[node name="get_new_version" type="Button" parent="layout/body/versions" unique_id=486015608]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -4.0
+offset_top = -8.0
+offset_right = 4.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_styles/normal = SubResource("StyleBoxFlat_pel7g")
+text = "Загрузить новую версию"
+
+[node name="projects" type="Control" parent="layout/body" unique_id=1588472335]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="layout/body/projects" unique_id=1205813245]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_bottom = -44.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="layout/body/projects/ScrollContainer" unique_id=622089978]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="project_1" type="Panel" parent="layout/body/projects/ScrollContainer/VBoxContainer" unique_id=537547992]
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="layout/body/projects/ScrollContainer/VBoxContainer/project_1" unique_id=1276344121]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = -9.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 12
+
+[node name="icon" type="ColorRect" parent="layout/body/projects/ScrollContainer/VBoxContainer/project_1/HBoxContainer" unique_id=512580341]
+custom_minimum_size = Vector2(56, 56)
+layout_mode = 2
+
+[node name="name" type="Label" parent="layout/body/projects/ScrollContainer/VBoxContainer/project_1/HBoxContainer" unique_id=626532829]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+text = "Какой-то проект #1"
+clip_text = true
+
+[node name="remove_project" type="Button" parent="layout/body/projects/ScrollContainer/VBoxContainer/project_1/HBoxContainer" unique_id=86542108]
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_y2wr3")
+text = "Удалить"
+
+[node name="version" type="Label" parent="layout/body/projects/ScrollContainer/VBoxContainer/project_1/HBoxContainer" unique_id=399514772]
+z_index = 1
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = " 4.4.1 "
+
+[node name="panel" type="Panel" parent="layout/body/projects/ScrollContainer/VBoxContainer/project_1/HBoxContainer/version" unique_id=888821100]
+z_index = -1
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 1
+anchors_preset = 14
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_a3ry3")
+
+[node name="edit_project" type="Button" parent="layout/body/projects/ScrollContainer/VBoxContainer/project_1/HBoxContainer" unique_id=1696213386]
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_k8dvw")
+text = "Редактировать"
+
+[node name="add_project" type="Button" parent="layout/body/projects" unique_id=1084465341]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -4.0
+offset_top = -8.0
+offset_right = 4.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_styles/normal = SubResource("StyleBoxFlat_xpfdc")
+text = "Добавить проект с диска"
+
+[node name="footer" type="HBoxContainer" parent="layout" unique_id=1092806049]
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="layout/footer" unique_id=1444040752]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.25882354, 0.25882354, 0.25882354, 1)
+theme_override_font_sizes/font_size = 10
+text = "Создал HorityFox для сообщества Godot Engine"
+horizontal_alignment = 1
+uppercase = true

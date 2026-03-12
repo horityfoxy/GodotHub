@@ -1,2 +1,10 @@
+Panel
+Button
+TextureRect
+Label
+ScrollContainer
 ColorRect
+HBoxContainer
+Control
+VBoxContainer
 CanvasLayer
