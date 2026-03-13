@@ -14,6 +14,7 @@
 [ext_resource type="StyleBox" uid="uid://uuj5ruxop1m6" path="res://src/themes/horityfox/buttons/red/normal.tres" id="7_gp064"]
 [ext_resource type="FontFile" uid="uid://crxptqsk1pq64" path="res://src/fonts/LINESeedJP/LINESeedJP-Bold.ttf" id="10_h0f1k"]
 [ext_resource type="Theme" uid="uid://d24t8jknpr3a4" path="res://src/themes/fonts/header.tres" id="14_01b7x"]
+[ext_resource type="Script" uid="uid://b3y1cfpuvbhgw" path="res://scripts/buttons/button_view_window.gd" id="15_c3m70"]
 [ext_resource type="StyleBox" uid="uid://bmscpcswrl7cn" path="res://src/themes/horityfox/panels/view_window.tres" id="15_heg84"]
 
 [sub_resource type="GDScript" id="GDScript_pel7g"]
@@ -34,9 +35,205 @@ func launch_editor_only(godot_path: String) -> void:
 		printerr(\"ОШИБКА: Не удалось запустить редактор.\")
 "
 
+[sub_resource type="GDScript" id="GDScript_usfbk"]
+script/source = "extends HBoxContainer
+
+@export_category(\"Buttons\")
+@export var settings_button : Button
+
+func _ready() -> void:
+	settings_button.pressed.connect(EventBus.settings_window_enable.emit)
+"
+
+[sub_resource type="GDScript" id="GDScript_1n1q0"]
+script/source = "extends Control
+
+@export_category(\"Buttons\")
+@export var add_project_button : Button
+
+func _ready() -> void:
+	add_project_button.pressed.connect(EventBus.drag_and_drop_window_enable.emit)
+"
+
+[sub_resource type="GDScript" id="GDScript_d4yno"]
+script/source = "extends Control
+
+@export_category(\"Blur\")
+@export var _blur : ColorRect
+
+@export_category(\"Windows\")
+@export var _drag_and_drop_window : Control
+@export var _settings_window : Control
+
+func _ready() -> void:
+	hide()
+	_settings_window.close_window.connect(disable)
+	_drag_and_drop_window.close_window.connect(disable)
+	EventBus.settings_window_enable.connect(enable_settings)
+	EventBus.drag_and_drop_window_enable.connect(enable_drag_and_drop)
+
+func enable_settings() -> void:
+	enable()
+	_settings_window.enable()
+
+func enable_drag_and_drop() -> void:
+	enable()
+	_drag_and_drop_window.enable()
+
+func enable_blur() -> void:
+	_blur.enable()
+
+func disable_windows() -> void:
+	_drag_and_drop_window.disable()
+	_settings_window.disable()
+
+func disable_blur() -> void:
+	_blur.disable()
+
+func disable_all() -> void:
+	disable_windows()
+	disable_blur()
+
+func enable() -> void:
+	show()
+
+func disable() -> void:
+	hide()
+"
+
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_y2wr3"]
 shader = ExtResource("3_k8dvw")
 shader_parameter/blur_amount = 1.50000007125
+
+[sub_resource type="GDScript" id="GDScript_cmhxe"]
+script/source = "extends ColorRect
+
+func enable() -> void:
+	show()
+
+func disable() -> void:
+	hide()
+"
+
+[sub_resource type="GDScript" id="GDScript_1vlam"]
+script/source = "extends Control
+
+signal close_window
+
+@export_category(\"Buttons\")
+@export var _scan_projects_button : Button
+@export var _close_window_button : Button
+
+func _ready() -> void:
+	hide()
+	_close_window_button.pressed.connect(disable)
+
+func enable() -> void:
+	show()
+
+func disable() -> void:
+	close_window.emit()
+	hide()
+"
+
+[sub_resource type="GDScript" id="GDScript_c3m70"]
+script/source = "extends Control
+
+signal  close_window
+
+@export_category(\"Windows\")
+@export var _settings_window : Panel
+
+func _ready() -> void:
+	hide()
+	_settings_window.close_window.connect(disable)
+
+func enable() -> void:
+	show()
+
+func disable() -> void:
+	close_window.emit()
+	hide()
+"
+
+[sub_resource type="GDScript" id="GDScript_ecu0m"]
+script/source = "extends Panel
+
+signal close_window
+
+@export_category(\"Buttons\")
+@export var _about_button : Button
+@export var _close_settings_button : Button
+
+@export_category(\"Windows\")
+@export var _about_window : Panel
+
+func _ready() -> void:
+	_about_button.pressed.connect(on_about_button_pressed)
+	_close_settings_button.pressed.connect(on_close_settings_button_pressed)
+
+func on_about_button_pressed() -> void:
+	_about_window.enable()
+
+func on_close_settings_button_pressed() -> void:
+	disable()
+
+func disable():
+	close_window.emit()
+"
+
+[sub_resource type="GDScript" id="GDScript_t4bcl"]
+script/source = "extends Panel
+
+@export var _view_window : Panel
+@export_category(\"buttons\")
+@export var _godot_hub_button : Button
+@export var _lineseedjp_button : Button
+@export var _godot_engine_button : Button
+@export var _about_program_button : Button
+@export var _close_about_window_button : Button
+
+func _ready() -> void:
+	_close_about_window_button.pressed.connect(_on_close_about_window_button_pressed)
+	var buttons = [
+		_godot_hub_button, 
+		_lineseedjp_button, 
+		_godot_engine_button, 
+		_about_program_button
+	]
+	
+	for btn in buttons: _connect_license_button(btn)
+
+func _connect_license_button(btn: Button) -> void:
+	if btn:
+		btn.pressed.connect(func():
+			var id_from_button = btn.get(\"ID\")
+			if id_from_button != null:
+				_view_window.text_update(id_from_button)
+		)
+
+func _on_close_about_window_button_pressed() -> void:
+	disable()
+
+func enable() -> void:
+	show()
+
+func disable() -> void:
+	hide()
+"
+
+[sub_resource type="GDScript" id="GDScript_gmty7"]
+script/source = "extends Panel
+
+@export var _licence_storange : Node
+@export var _richlabel : RichTextLabel
+
+func _ready() -> void:
+	if _richlabel: _richlabel.text = _licence_storange.get_text(0)
+
+func text_update(value : int):
+	_richlabel.text = _licence_storange.get_text(value)
+"
 
 [sub_resource type="GDScript" id="GDScript_heg84"]
 script/source = "extends Node
@@ -83,7 +280,7 @@ Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.\\n
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\\n
 The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\\n
 THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\"\"\",
-3: \"\"\"Спасибо, что используете Godot Hub для ваших проектов.
+	3: \"\"\"Спасибо, что используете Godot Hub для ваших проектов.
 Я думаю вы и сами устали переключаться между версиями, установленными где то в недрах вашей системы, бороться с ярлыками и путаться, когда запускаешь не ту версию редактора.
 Надеюсь Godot Hub поможет вам избавиться от рутины.\\n
 Ссылки: 
@@ -127,11 +324,13 @@ grow_horizontal = 2
 grow_vertical = 2
 theme = ExtResource("1_01b7x")
 
-[node name="header" type="HBoxContainer" parent="layout" unique_id=612383905]
+[node name="header" type="HBoxContainer" parent="layout" unique_id=612383905 node_paths=PackedStringArray("settings_button")]
 custom_minimum_size = Vector2(0, 56)
 layout_mode = 2
 theme_override_constants/separation = 16
 alignment = 1
+script = SubResource("GDScript_usfbk")
+settings_button = NodePath("settings")
 
 [node name="spacer" type="ColorRect" parent="layout/header" unique_id=394431728]
 custom_minimum_size = Vector2(24, 24)
@@ -319,13 +518,15 @@ grow_vertical = 0
 theme_override_styles/normal = ExtResource("4_pmn7o")
 text = "Загрузить новую версию"
 
-[node name="projects" type="Control" parent="layout/body" unique_id=1588472335]
+[node name="projects" type="Control" parent="layout/body" unique_id=1588472335 node_paths=PackedStringArray("add_project_button")]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = SubResource("GDScript_1n1q0")
+add_project_button = NodePath("add_project")
 
 [node name="hint" type="Label" parent="layout/body/projects" unique_id=1863291649]
 visible = false
@@ -396,7 +597,8 @@ text = "Создано HorityFox для сообщества Godot Engine"
 horizontal_alignment = 1
 uppercase = true
 
-[node name="popup_window" type="Control" parent="." unique_id=182114234]
+[node name="popup_window" type="Control" parent="." unique_id=182114234 node_paths=PackedStringArray("_blur", "_drag_and_drop_window", "_settings_window")]
+visible = false
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -404,6 +606,10 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 theme = ExtResource("1_01b7x")
+script = SubResource("GDScript_d4yno")
+_blur = NodePath("bg")
+_drag_and_drop_window = NodePath("drag_and_drop")
+_settings_window = NodePath("settings")
 
 [node name="bg" type="ColorRect" parent="popup_window" unique_id=644468900]
 z_index = 1
@@ -415,8 +621,9 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.03529412, 0.03529412, 0.03529412, 0.3372549)
+script = SubResource("GDScript_cmhxe")
 
-[node name="drag_and_drop" type="Control" parent="popup_window" unique_id=1795121393]
+[node name="drag_and_drop" type="Control" parent="popup_window" unique_id=1795121393 node_paths=PackedStringArray("_scan_projects_button", "_close_window_button")]
 visible = false
 z_index = 1
 layout_mode = 1
@@ -425,6 +632,9 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = SubResource("GDScript_1vlam")
+_scan_projects_button = NodePath("Panel/VBoxContainer/HBoxContainer/scan_project")
+_close_window_button = NodePath("Panel/VBoxContainer/HBoxContainer/close")
 
 [node name="Panel" type="Panel" parent="popup_window/drag_and_drop" unique_id=1528090570]
 layout_mode = 1
@@ -495,7 +705,8 @@ layout_mode = 2
 theme_override_styles/normal = ExtResource("7_gp064")
 text = "Закрыть"
 
-[node name="settings" type="Control" parent="popup_window" unique_id=1532549054]
+[node name="settings" type="Control" parent="popup_window" unique_id=1532549054 node_paths=PackedStringArray("_settings_window")]
+visible = false
 z_index = 1
 layout_mode = 1
 anchors_preset = 15
@@ -503,8 +714,10 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = SubResource("GDScript_c3m70")
+_settings_window = NodePath("settings_window")
 
-[node name="settings_window" type="Panel" parent="popup_window/settings" unique_id=607638348]
+[node name="settings_window" type="Panel" parent="popup_window/settings" unique_id=607638348 node_paths=PackedStringArray("_about_button", "_close_settings_button", "_about_window")]
 layout_mode = 1
 anchors_preset = -1
 anchor_left = 0.5
@@ -518,6 +731,10 @@ offset_bottom = 175.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = ExtResource("4_y2wr3")
+script = SubResource("GDScript_ecu0m")
+_about_button = NodePath("VBoxContainer/HBoxContainer/about")
+_close_settings_button = NodePath("VBoxContainer/HBoxContainer/close")
+_about_window = NodePath("../about_window")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="popup_window/settings/settings_window" unique_id=292929761]
 layout_mode = 1
@@ -555,15 +772,9 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 14
 alignment = 2
 selected = 0
-item_count = 4
+item_count = 1
 popup/item_0/text = "Русский"
 popup/item_0/id = 0
-popup/item_1/text = "Английский"
-popup/item_1/id = 1
-popup/item_2/text = "Японский"
-popup/item_2/id = 2
-popup/item_3/text = "Немецкий"
-popup/item_3/id = 3
 
 [node name="theme" type="HBoxContainer" parent="popup_window/settings/settings_window/VBoxContainer/VBoxContainer" unique_id=1705096437]
 layout_mode = 2
@@ -598,7 +809,7 @@ layout_mode = 2
 theme_override_styles/normal = ExtResource("7_gp064")
 text = "Закрыть"
 
-[node name="about_window" type="Panel" parent="popup_window/settings" unique_id=266747320]
+[node name="about_window" type="Panel" parent="popup_window/settings" unique_id=266747320 node_paths=PackedStringArray("_view_window", "_godot_hub_button", "_lineseedjp_button", "_godot_engine_button", "_about_program_button", "_close_about_window_button")]
 visible = false
 custom_minimum_size = Vector2(600, 388)
 layout_mode = 1
@@ -612,6 +823,13 @@ offset_bottom = -130.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = ExtResource("4_y2wr3")
+script = SubResource("GDScript_t4bcl")
+_view_window = NodePath("HBoxContainer/view_window")
+_godot_hub_button = NodePath("HBoxContainer/VBoxContainer/Godot Hub")
+_lineseedjp_button = NodePath("HBoxContainer/VBoxContainer/LINESeedJP")
+_godot_engine_button = NodePath("HBoxContainer/VBoxContainer/Godot Engine")
+_about_program_button = NodePath("HBoxContainer/VBoxContainer/About")
+_close_about_window_button = NodePath("HBoxContainer/VBoxContainer/close")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="popup_window/settings/about_window" unique_id=281050102]
 layout_mode = 1
@@ -636,6 +854,7 @@ theme_override_font_sizes/font_size = 14
 text = "Godot Hub"
 flat = true
 alignment = 0
+script = ExtResource("15_c3m70")
 
 [node name="LINESeedJP" type="Button" parent="popup_window/settings/about_window/HBoxContainer/VBoxContainer" unique_id=294514142]
 layout_mode = 2
@@ -643,6 +862,8 @@ theme_override_font_sizes/font_size = 14
 text = "LINESeedJP"
 flat = true
 alignment = 0
+script = ExtResource("15_c3m70")
+ID = 1
 
 [node name="Godot Engine" type="Button" parent="popup_window/settings/about_window/HBoxContainer/VBoxContainer" unique_id=46224630]
 layout_mode = 2
@@ -650,6 +871,8 @@ theme_override_font_sizes/font_size = 14
 text = "Godot Engine"
 flat = true
 alignment = 0
+script = ExtResource("15_c3m70")
+ID = 2
 
 [node name="About" type="Button" parent="popup_window/settings/about_window/HBoxContainer/VBoxContainer" unique_id=2063456667]
 layout_mode = 2
@@ -657,21 +880,26 @@ theme_override_font_sizes/font_size = 14
 text = "Подробнее"
 flat = true
 alignment = 0
+script = ExtResource("15_c3m70")
+ID = 3
 
 [node name="spacer" type="Control" parent="popup_window/settings/about_window/HBoxContainer/VBoxContainer" unique_id=778711187]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="exit" type="Button" parent="popup_window/settings/about_window/HBoxContainer/VBoxContainer" unique_id=29047539]
+[node name="close" type="Button" parent="popup_window/settings/about_window/HBoxContainer/VBoxContainer" unique_id=29047539]
 layout_mode = 2
 theme_override_styles/normal = ExtResource("7_gp064")
 text = "Закрыть"
 clip_text = true
 
-[node name="view_window" type="Panel" parent="popup_window/settings/about_window/HBoxContainer" unique_id=706897794]
+[node name="view_window" type="Panel" parent="popup_window/settings/about_window/HBoxContainer" unique_id=706897794 node_paths=PackedStringArray("_licence_storange", "_richlabel")]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/panel = ExtResource("15_heg84")
+script = SubResource("GDScript_gmty7")
+_licence_storange = NodePath("licence_storange")
+_richlabel = NodePath("RichTextLabel")
 
 [node name="licence_storange" type="Node" parent="popup_window/settings/about_window/HBoxContainer/view_window" unique_id=1451188623]
 script = SubResource("GDScript_heg84")
@@ -710,6 +938,7 @@ Toncoin TON: UQCA6X3HhuQiEHM6sPbF5XpP42vSkpJYkQOZhONM26l7XNZq
 visible = false
 z_index = 1
 layout_mode = 1
+anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5

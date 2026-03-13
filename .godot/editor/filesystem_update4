@@ -1,6 +1,5 @@
 res://nodes/main.tscn
-res://scripts/shaders/blur_background.gdshader
-res://src/themes/fonts/header.tres
 res://src/themes/global.tres
-res://src/themes/horityfox/panels/window_drag_and_drop.tres
-res://src/themes/horityfox/panels/view_window.tres
+res://scripts/shaders/blur_background.gdshader
+res://scripts/buttons/button_view_window.gd
+res://scripts/singleton/eventbus.gd
