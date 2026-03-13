@@ -1,6 +1,6 @@
 res://nodes/main.tscn
-res://nodes/UI/project_panel.tscn
 res://scripts/shaders/blur_background.gdshader
-res://src/themes/buttons/blue/normal.tres
-res://src/themes/buttons/green/normal.tres
-res://src/themes/window_drag_and_drop.tres
+res://src/themes/fonts/header.tres
+res://src/themes/global.tres
+res://src/themes/horityfox/panels/window_drag_and_drop.tres
+res://src/themes/horityfox/panels/view_window.tres

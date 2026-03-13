@@ -17,5 +17,5 @@ func set_icon(value : Texture2D) -> void:
 	if _icon_texture: _icon_texture.texture = value
 	else: printerr("ERROR: _icon_texture is not assigned in the Inspector!")
 
-func remove():
+func remove() -> void:
 	queue_free()

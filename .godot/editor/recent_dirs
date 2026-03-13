@@ -1,8 +1,6 @@
-res://src/themes/panels/
-res://src/themes/buttons/blue/
-res://src/themes/buttons/gray/
-res://src/themes/buttons/
+res://src/themes/horityfox/panels/
 res://src/themes/
+res://src/themes/fonts/
 res://scripts/shaders/
 res://nodes/UI/
 res://nodes/

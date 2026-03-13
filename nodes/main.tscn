@@ -1,5 +1,6 @@
 [gd_scene format=3 uid="uid://bn5m56kyvj02p"]
 
+[ext_resource type="Theme" uid="uid://djhof4wp4fwjb" path="res://src/themes/global.tres" id="1_01b7x"]
 [ext_resource type="Texture2D" uid="uid://dtwh3afljtusf" path="res://src/sprites/settings/settings_logo.svg" id="1_xpfdc"]
 [ext_resource type="PackedScene" uid="uid://cdm35govyflcd" path="res://nodes/UI/project_panel.tscn" id="2_a3ry3"]
 [ext_resource type="StyleBox" uid="uid://bu64x5yv714fq" path="res://src/themes/horityfox/buttons/green/normal.tres" id="3_6s2ku"]
@@ -11,6 +12,9 @@
 [ext_resource type="StyleBox" uid="uid://p58b3mqkmpwp" path="res://src/themes/horityfox/buttons/blue/normal.tres" id="4_pmn7o"]
 [ext_resource type="StyleBox" uid="uid://bm2eusnrvc8qe" path="res://src/themes/horityfox/panels/window_drag_and_drop.tres" id="4_y2wr3"]
 [ext_resource type="StyleBox" uid="uid://uuj5ruxop1m6" path="res://src/themes/horityfox/buttons/red/normal.tres" id="7_gp064"]
+[ext_resource type="FontFile" uid="uid://crxptqsk1pq64" path="res://src/fonts/LINESeedJP/LINESeedJP-Bold.ttf" id="10_h0f1k"]
+[ext_resource type="Theme" uid="uid://d24t8jknpr3a4" path="res://src/themes/fonts/header.tres" id="14_01b7x"]
+[ext_resource type="StyleBox" uid="uid://bmscpcswrl7cn" path="res://src/themes/horityfox/panels/view_window.tres" id="15_heg84"]
 
 [sub_resource type="GDScript" id="GDScript_pel7g"]
 script/source = "extends CanvasLayer
@@ -30,24 +34,78 @@ func launch_editor_only(godot_path: String) -> void:
 		printerr(\"ОШИБКА: Не удалось запустить редактор.\")
 "
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_a3ry3"]
-bg_color = Color(0.09019608, 0.09019608, 0.09019608, 1)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
-
-[sub_resource type="Theme" id="Theme_ufc4x"]
-Panel/styles/panel = SubResource("StyleBoxFlat_a3ry3")
-
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_y2wr3"]
 shader = ExtResource("3_k8dvw")
 shader_parameter/blur_amount = 1.50000007125
+
+[sub_resource type="GDScript" id="GDScript_heg84"]
+script/source = "extends Node
+
+var _licence_texts = {
+	0: \"\"\"Copyright © 2026 HorityFox. All rights reserved.
+BSD 2-Clause License
+Copyright (c) 2026, HorityFox\\n
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.\\n
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\"\"\",
+	1: \"\"\"This program uses the LINE Seed JP font. Designed by LY Corporation. Licensed under the SIL Open Font License:\\n
+© LY Corporation
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license is copied below, and is also available with a FAQ at: https://openfontlicense.org\\n
+-----------------------------------------------------------
+SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007
+-----------------------------------------------------------\\n
+PREAMBLE
+The goals of the Open Font License (OFL) are to stimulate worldwide development of collaborative font projects, to support the font creation efforts of academic and linguistic communities, and to provide a free and open framework in which fonts may be shared and improved in partnership with others.\\n
+The OFL allows the licensed fonts to be used, studied, modified and redistributed freely as long as they are not sold by themselves. The fonts, including any derivative works, can be bundled, embedded, redistributed and/or sold with any software provided that any reserved names are not used by derivative works. The fonts and derivatives, however, cannot be released under any other type of license. The requirement for fonts to remain under this license does not apply to any document created using the fonts or their derivatives.\\n
+DEFINITIONS
+\"Font Software\" refers to the set of files released by the Copyright Holder(s) under this license and clearly marked as such. This may include source files, build scripts and documentation.
+\"Reserved Font Name\" refers to any names specified as such after the copyright statement(s).
+\"Original Version\" refers to the collection of Font Software components as distributed by the Copyright Holder(s).
+\"Modified Version\" refers to any derivative made by adding to, deleting, or substituting -- in part or in whole -- any of the components of the Original Version, by changing formats or by porting the Font Software to a new environment.
+\"Author\" refers to any designer, engineer, programmer, technical writer or other person who contributed to the Font Software.\\n
+PERMISSION & CONDITIONS
+Permission is hereby granted, free of charge, to any person obtaining a copy of the Font Software, to use, study, copy, merge, embed, modify, redistribute, and sell modified and unmodified copies of the Font Software, subject to the following conditions:
+1) Neither the Font Software nor any of its individual components, in Original or Modified Versions, may be sold by itself.
+2) Original or Modified Versions of the Font Software may be bundled, redistributed and/or sold with any software, provided that each copy contains the above copyright notice and this license. These can be included either as stand-alone text files, human-readable headers or in the appropriate machine-readable metadata fields within text or binary files as long as those fields can be easily viewed by the user.
+3) No Modified Version of the Font Software may use the Reserved Font Name(s) unless explicit written permission is granted by the corresponding Copyright Holder. This restriction only applies to the primary font name as presented to the users.
+4) The name(s) of the Copyright Holder(s) or the Author(s) of the Font Software shall not be used to promote, endorse or advertise any Modified Version, except to acknowledge the contribution(s) of the Copyright Holder(s) and the Author(s) or with their explicit written permission.
+5) The Font Software, modified or unmodified, in part or in whole, must be distributed entirely under this license, and must not be distributed under any other license. The requirement for fonts to remain under this license does not apply to any document created using the Font Software.\\n
+TERMINATION
+This license becomes null and void if any of the above conditions are not met.\\n
+DISCLAIMER
+THE FONT SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF COPYRIGHT, PATENT, TRADEMARK, OR OTHER RIGHT. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM OTHER DEALINGS IN THE FONT SOFTWARE.
+\"\"\",
+	2: \"\"\"This software uses Godot Engine v4.6.1-stable, licensed under the MIT license:\\n
+Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md).
+Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.\\n
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\\n
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\\n
+THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\"\"\",
+3: \"\"\"Спасибо, что используете Godot Hub для ваших проектов.
+Я думаю вы и сами устали переключаться между версиями, установленными где то в недрах вашей системы, бороться с ярлыками и путаться, когда запускаешь не ту версию редактора.
+Надеюсь Godot Hub поможет вам избавиться от рутины.\\n
+Ссылки: 
+GitHub: [url=https://github.com/horityfoxy/GodotHub]https://github.com/horityfoxy/GodotHub[/url]\\n
+Я буду рад, если вы сделаете какой-нибудь форк этого хаба или предложите мне идеи что еще можно было бы добавить в программу :)\\n
+Если вы хотите поддержать меня, то можете прислать пару долларов на мой крипто кошелек :)\\n
+USDT TRC20: TFAZ75Tny81jHHS57ZaHh3gUzVVEJo796d
+Bitcoin BTC: bc1qpsmghmr6vn6nz782um5jasxw9snmf0l8gr59hk
+Etherium ETH: 0x6137d23C7A526Af45a49F34bb2Ce49797668Ab31
+Toncoin TON: UQCA6X3HhuQiEHM6sPbF5XpP42vSkpJYkQOZhONM26l7XNZq\\n
+Ваш HorityFox \"\"\"
+}
+
+func get_text(id : int):
+	return _licence_texts.get(id, \"Error: License text not found!\")
+"
 
 [node name="main" type="CanvasLayer" unique_id=2071414279]
 script = SubResource("GDScript_pel7g")
 
 [node name="background_color" type="ColorRect" parent="." unique_id=1187307622]
+custom_minimum_size = Vector2(550, 350)
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -67,6 +125,7 @@ offset_left = 13.0
 offset_right = -10.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = ExtResource("1_01b7x")
 
 [node name="header" type="HBoxContainer" parent="layout" unique_id=612383905]
 custom_minimum_size = Vector2(0, 56)
@@ -161,6 +220,26 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
+[node name="hint" type="Label" parent="layout/body/versions" unique_id=1558633693]
+visible = false
+layout_mode = 1
+anchors_preset = -1
+anchor_left = -0.013
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = 79.677
+offset_top = -57.0
+offset_right = -65.0
+offset_bottom = 53.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.3328807, 0.33288068, 0.33288074, 1)
+theme_override_font_sizes/font_size = 24
+text = "Загрузите новую версию Godot Engine"
+horizontal_alignment = 1
+autowrap_mode = 2
+
 [node name="ScrollContainer" type="ScrollContainer" parent="layout/body/versions" unique_id=1096962877]
 layout_mode = 1
 anchors_preset = 15
@@ -248,6 +327,27 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
+[node name="hint" type="Label" parent="layout/body/projects" unique_id=1863291649]
+visible = false
+layout_mode = 1
+anchors_preset = -1
+anchor_left = -0.013
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = 79.677
+offset_top = -57.0
+offset_right = -65.0
+offset_bottom = 53.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.3328807, 0.33288068, 0.33288074, 1)
+theme_override_font_sizes/font_size = 24
+text = "Добавьте проект с диска или создайте его,
+запустив Godot Engine"
+horizontal_alignment = 1
+autowrap_mode = 2
+
 [node name="ScrollContainer" type="ScrollContainer" parent="layout/body/projects" unique_id=1205813245]
 layout_mode = 1
 anchors_preset = 15
@@ -290,20 +390,20 @@ alignment = 1
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.25882354, 0.25882354, 0.25882354, 1)
+theme_override_fonts/font = ExtResource("10_h0f1k")
 theme_override_font_sizes/font_size = 10
 text = "Создано HorityFox для сообщества Godot Engine"
 horizontal_alignment = 1
 uppercase = true
 
 [node name="popup_window" type="Control" parent="." unique_id=182114234]
-visible = false
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme = SubResource("Theme_ufc4x")
+theme = ExtResource("1_01b7x")
 
 [node name="bg" type="ColorRect" parent="popup_window" unique_id=644468900]
 z_index = 1
@@ -317,6 +417,7 @@ grow_vertical = 2
 color = Color(0.03529412, 0.03529412, 0.03529412, 0.3372549)
 
 [node name="drag_and_drop" type="Control" parent="popup_window" unique_id=1795121393]
+visible = false
 z_index = 1
 layout_mode = 1
 anchors_preset = 15
@@ -328,12 +429,14 @@ grow_vertical = 2
 [node name="Panel" type="Panel" parent="popup_window/drag_and_drop" unique_id=1528090570]
 layout_mode = 1
 anchors_preset = -1
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 285.0
-offset_top = 149.0
-offset_right = -285.0
-offset_bottom = -149.0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -291.0
+offset_top = -175.0
+offset_right = 291.0
+offset_bottom = 175.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = ExtResource("4_y2wr3")
@@ -350,8 +453,7 @@ grow_vertical = 2
 
 [node name="Label" type="Label" parent="popup_window/drag_and_drop/Panel/VBoxContainer" unique_id=165494374]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.65012825, 0.6501283, 0.65012825, 1)
-theme_override_font_sizes/font_size = 14
+theme = ExtResource("14_01b7x")
 text = "Переместите или сканируйте папку с проектами"
 horizontal_alignment = 1
 clip_text = true
@@ -394,7 +496,6 @@ theme_override_styles/normal = ExtResource("7_gp064")
 text = "Закрыть"
 
 [node name="settings" type="Control" parent="popup_window" unique_id=1532549054]
-visible = false
 z_index = 1
 layout_mode = 1
 anchors_preset = 15
@@ -403,20 +504,22 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Panel" type="Panel" parent="popup_window/settings" unique_id=607638348]
+[node name="settings_window" type="Panel" parent="popup_window/settings" unique_id=607638348]
 layout_mode = 1
 anchors_preset = -1
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 285.0
-offset_top = 149.0
-offset_right = -285.0
-offset_bottom = -149.0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -291.0
+offset_top = -175.0
+offset_right = 291.0
+offset_bottom = 175.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = ExtResource("4_y2wr3")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="popup_window/settings/Panel" unique_id=292929761]
+[node name="VBoxContainer" type="VBoxContainer" parent="popup_window/settings/settings_window" unique_id=292929761]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -428,28 +531,28 @@ offset_bottom = -12.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Label" type="Label" parent="popup_window/settings/Panel/VBoxContainer" unique_id=1036067533]
+[node name="Label" type="Label" parent="popup_window/settings/settings_window/VBoxContainer" unique_id=1036067533]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.65012825, 0.6501283, 0.65012825, 1)
-theme_override_font_sizes/font_size = 14
+theme = ExtResource("14_01b7x")
 text = "Настройки"
 horizontal_alignment = 1
 clip_text = true
 
-[node name="VBoxContainer" type="VBoxContainer" parent="popup_window/settings/Panel/VBoxContainer" unique_id=534078114]
+[node name="VBoxContainer" type="VBoxContainer" parent="popup_window/settings/settings_window/VBoxContainer" unique_id=534078114]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="language" type="HBoxContainer" parent="popup_window/settings/Panel/VBoxContainer/VBoxContainer" unique_id=1534520518]
+[node name="language" type="HBoxContainer" parent="popup_window/settings/settings_window/VBoxContainer/VBoxContainer" unique_id=1534520518]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="popup_window/settings/Panel/VBoxContainer/VBoxContainer/language" unique_id=1707943281]
+[node name="Label" type="Label" parent="popup_window/settings/settings_window/VBoxContainer/VBoxContainer/language" unique_id=1707943281]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Язык"
 
-[node name="OptionButton" type="OptionButton" parent="popup_window/settings/Panel/VBoxContainer/VBoxContainer/language" unique_id=1569932035]
+[node name="OptionButton" type="OptionButton" parent="popup_window/settings/settings_window/VBoxContainer/VBoxContainer/language" unique_id=1569932035]
 layout_mode = 2
+theme_override_font_sizes/font_size = 14
 alignment = 2
 selected = 0
 item_count = 4
@@ -462,39 +565,159 @@ popup/item_2/id = 2
 popup/item_3/text = "Немецкий"
 popup/item_3/id = 3
 
-[node name="theme" type="HBoxContainer" parent="popup_window/settings/Panel/VBoxContainer/VBoxContainer" unique_id=1705096437]
+[node name="theme" type="HBoxContainer" parent="popup_window/settings/settings_window/VBoxContainer/VBoxContainer" unique_id=1705096437]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="popup_window/settings/Panel/VBoxContainer/VBoxContainer/theme" unique_id=185104013]
+[node name="Label" type="Label" parent="popup_window/settings/settings_window/VBoxContainer/VBoxContainer/theme" unique_id=185104013]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
 text = "Тема"
 
-[node name="OptionButton" type="OptionButton" parent="popup_window/settings/Panel/VBoxContainer/VBoxContainer/theme" unique_id=297769814]
+[node name="OptionButton" type="OptionButton" parent="popup_window/settings/settings_window/VBoxContainer/VBoxContainer/theme" unique_id=297769814]
 layout_mode = 2
+theme_override_font_sizes/font_size = 14
 alignment = 2
 selected = 0
 item_count = 1
 popup/item_0/text = "HorityFox"
 popup/item_0/id = 0
 
-[node name="HBoxContainer" type="HBoxContainer" parent="popup_window/settings/Panel/VBoxContainer" unique_id=1776253442]
+[node name="HBoxContainer" type="HBoxContainer" parent="popup_window/settings/settings_window/VBoxContainer" unique_id=1776253442]
 layout_mode = 2
 theme_override_constants/separation = 8
 alignment = 1
 
-[node name="close" type="Button" parent="popup_window/settings/Panel/VBoxContainer/HBoxContainer" unique_id=1872791804]
+[node name="about" type="Button" parent="popup_window/settings/settings_window/VBoxContainer/HBoxContainer" unique_id=514248537]
+layout_mode = 2
+theme_override_styles/normal = ExtResource("4_pmn7o")
+text = "О программе"
+
+[node name="close" type="Button" parent="popup_window/settings/settings_window/VBoxContainer/HBoxContainer" unique_id=1872791804]
 layout_mode = 2
 theme_override_styles/normal = ExtResource("7_gp064")
 text = "Закрыть"
+
+[node name="about_window" type="Panel" parent="popup_window/settings" unique_id=266747320]
+visible = false
+custom_minimum_size = Vector2(600, 388)
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 276.0
+offset_top = 130.0
+offset_right = -276.0
+offset_bottom = -130.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = ExtResource("4_y2wr3")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="popup_window/settings/about_window" unique_id=281050102]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 8
+
+[node name="VBoxContainer" type="VBoxContainer" parent="popup_window/settings/about_window/HBoxContainer" unique_id=387388089]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Godot Hub" type="Button" parent="popup_window/settings/about_window/HBoxContainer/VBoxContainer" unique_id=191882804]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Godot Hub"
+flat = true
+alignment = 0
+
+[node name="LINESeedJP" type="Button" parent="popup_window/settings/about_window/HBoxContainer/VBoxContainer" unique_id=294514142]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "LINESeedJP"
+flat = true
+alignment = 0
+
+[node name="Godot Engine" type="Button" parent="popup_window/settings/about_window/HBoxContainer/VBoxContainer" unique_id=46224630]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Godot Engine"
+flat = true
+alignment = 0
+
+[node name="About" type="Button" parent="popup_window/settings/about_window/HBoxContainer/VBoxContainer" unique_id=2063456667]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Подробнее"
+flat = true
+alignment = 0
+
+[node name="spacer" type="Control" parent="popup_window/settings/about_window/HBoxContainer/VBoxContainer" unique_id=778711187]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="exit" type="Button" parent="popup_window/settings/about_window/HBoxContainer/VBoxContainer" unique_id=29047539]
+layout_mode = 2
+theme_override_styles/normal = ExtResource("7_gp064")
+text = "Закрыть"
+clip_text = true
+
+[node name="view_window" type="Panel" parent="popup_window/settings/about_window/HBoxContainer" unique_id=706897794]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = ExtResource("15_heg84")
+
+[node name="licence_storange" type="Node" parent="popup_window/settings/about_window/HBoxContainer/view_window" unique_id=1451188623]
+script = SubResource("GDScript_heg84")
+
+[node name="RichTextLabel" type="RichTextLabel" parent="popup_window/settings/about_window/HBoxContainer/view_window" unique_id=1157045804]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = 1.0
+offset_right = -2.0
+offset_bottom = -1.0
+grow_horizontal = 2
+grow_vertical = 2
+bbcode_enabled = true
+text = "Спасибо, что используете Godot Hub для ваших проектов.
+Я думаю вы и сами устали переключаться между версиями, установленными где то в недрах вашей системы, бороться с ярлыками и путаться, когда запускаешь не ту версию редактора.
+Надеюсь Godot Hub поможет вам избавиться от рутины.
+
+Ссылки: 
+GitHub: [url=https://github.com/horityfoxy/GodotHub]https://github.com/horityfoxy/GodotHub[/url]
+
+Я буду рад, если вы сделаете какой-нибудь форк этого хаба или предложите мне идеи что еще можно было бы добавить в программу :)
+
+Если вы хотите поддержать меня, то можете прислать пару долларов на мой крипто кошелек :)
+
+USDT TRC20: TFAZ75Tny81jHHS57ZaHh3gUzVVEJo796d
+Bitcoin BTC: bc1qpsmghmr6vn6nz782um5jasxw9snmf0l8gr59hk
+Etherium ETH: 0x6137d23C7A526Af45a49F34bb2Ce49797668Ab31
+Toncoin TON: UQCA6X3HhuQiEHM6sPbF5XpP42vSkpJYkQOZhONM26l7XNZq
+
+Ваш HorityFox "
 
 [node name="accept_window" type="Control" parent="popup_window" unique_id=340021065]
 visible = false
 z_index = 1
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -576.0
+offset_top = -324.0
+offset_right = 576.0
+offset_bottom = 324.0
 grow_horizontal = 2
 grow_vertical = 2
 
@@ -525,8 +748,7 @@ grow_vertical = 2
 
 [node name="Label" type="Label" parent="popup_window/accept_window/Panel/VBoxContainer" unique_id=968356342]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.65012825, 0.6501283, 0.65012825, 1)
-theme_override_font_sizes/font_size = 14
+theme = ExtResource("14_01b7x")
 text = "Вы уверены?"
 horizontal_alignment = 1
 clip_text = true

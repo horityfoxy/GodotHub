@@ -18,6 +18,7 @@ var _version : String = \"\"
 func _ready() -> void:
 	if _edit_button: _edit_button.pressed.connect(_edit_project)
 	if _run_button: _run_button.pressed.connect(_run_project)
+	super()
 
 func set_godot_path(value : String) -> void:
 	_godot_path = value
@@ -28,7 +29,7 @@ func set_project_path(value : String) -> void:
 func set_version(value : String) -> void:
 	_version = value
 
-func remove():
+func remove() -> void:
 	print(\"obj has removed!\")
 	super()
 
