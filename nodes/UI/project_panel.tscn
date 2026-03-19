@@ -31,7 +31,6 @@ func _ready() -> void:
 	super()
 
 func setup_tags():
-	print(\"ID: \", _get_id())
 	_tags_zones._set_id(_get_id())
 	_tags_zones.load_tag()
 
@@ -95,6 +94,7 @@ var _tag_count : int = 0
 var _project_id : String = \"\"
 
 func _ready() -> void:
+	EventBus.tag_count_change.connect(_update_tags_count)
 	_new_tag_button.pressed.connect(_spawn_tag)
 	_new_tag_button.hide()
 
@@ -109,8 +109,15 @@ func _spawn_tag() -> void:
 	_spawned_tag.tag_created.connect(_show_create_tag_button)
 	move_child(_spawned_tag, get_child_count() - 2)
 
-func _set_id(value : String):
-	_project_id = value
+func _update_tags_count(target_id: String):
+	if target_id != _project_id: return
+	var current_tags = 0
+	for child in get_children():
+		if child.is_in_group(\"user_tag\") and not child.is_queued_for_deletion(): current_tags += 1
+	_tag_count = current_tags
+	_show_create_tag_button()
+
+func _set_id(value : String): _project_id = value
 
 func _show_create_tag_button() -> void:
 	if _tag_count >= max_count: return
@@ -136,6 +143,7 @@ func load_tag():
 		if _spawned_tag.has_method(\"off_settings_window\"):
 			_spawned_tag.off_settings_window()
 		move_child(_spawned_tag, get_child_count() - 2)
+	_show_create_tag_button()
 "
 
 [node name="project_1" type="Panel" unique_id=426653167 node_paths=PackedStringArray("_edit_button", "_run_button", "_version_label", "_tags_zones", "_label_name", "_icon_texture", "_remove_button")]

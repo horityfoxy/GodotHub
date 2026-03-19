@@ -1,4 +1,3 @@
-res://scripts/singleton/save_system.gd
 res://nodes/main.tscn
 res://src/themes/global.tres
 res://scripts/shaders/blur_background.gdshader
@@ -8,5 +7,7 @@ res://src/themes/horityfox/buttons/gray/gray_button.tres
 res://scripts/shaders/tag_color_circle.gdshader
 res://src/themes/horityfox/line_edit/drop_down_line_edit.tres
 res://nodes/UI/make_tag_window.tscn
-res://nodes/UI/tag_project.tscn
 res://nodes/UI/project_panel.tscn
+res://nodes/UI/tag_project.tscn
+res://scripts/singleton/save_system.gd
+res://scripts/singleton/eventbus.gd

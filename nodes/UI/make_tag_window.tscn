@@ -49,7 +49,7 @@ signal selected_color(value: Color)
 
 func _ready() -> void:
 	var first_child = get_child(0) as ColorRect
-	if first_child: selected_color.emit(first_child.color)
+	selected_color.emit(first_child.color)
 	
 	for color_node in get_children():
 		if color_node is ColorRect: color_node.gui_input.connect(_on_color_gui_input.bind(color_node))
@@ -70,6 +70,7 @@ shader = ExtResource("2_rm8n2")
 shader = ExtResource("2_rm8n2")
 
 [node name="make_tag_window" type="Panel" unique_id=689473586 node_paths=PackedStringArray("_line_edit", "_colors", "_remove_button", "_create_button")]
+top_level = true
 offset_top = 6.0
 offset_right = 252.0
 offset_bottom = 62.0

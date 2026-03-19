@@ -15,3 +15,7 @@ signal project_found(project_file_path: String)
 signal switch_window_body(value: String)
 @warning_ignore("unused_signal")
 signal edit_button_pressed
+
+## TAGS SIGNALS ##
+@warning_ignore("unused_signal")
+signal tag_count_change(project_id: String)

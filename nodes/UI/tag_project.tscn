@@ -11,17 +11,28 @@ signal tag_created
 var _tag_text : String = \"\"
 var _strikethrough_text = \"\"
 var _project_id : String = \"\"
-var _color_tag : Color
+var _color_tag : Color = Color(\"0e55c2\")
+var _color_remove : Color = Color(\"e9002c\")
 
 @export var _make_tag_window : PackedScene
 @export var _spawn_make_window_point : Control
 @export var _background : Panel
 
+var _edit_mode : bool = false
+
 func _ready() -> void:
 	mouse_entered.connect(_remove_mouse_entered)
 	mouse_exited.connect(_remove_mouse_exited)
+	EventBus.edit_button_pressed.connect(_enable_edit_mode)
+	gui_input.connect(on_tag_clicked)
 	set_tag_text(\" ... \")
 	spawn()
+
+func _enable_edit_mode():
+	_edit_mode = !_edit_mode
+
+func on_tag_clicked(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed: _remove_tag()
 
 func set_project_id(value : String):
 	_project_id = value
@@ -36,34 +47,41 @@ func set_tag_text(value : String):
 	text = _tag_text
 
 func _remove_mouse_entered():
+	if _edit_mode == false: return
 	text = _strikethrough_text
+	_background.set_color(_color_remove)
 	print(_strikethrough_text)
 
 func _remove_mouse_exited():
+	if _edit_mode == false: return
 	text = _tag_text
+	_background.set_color(_color_tag)
 	print(text)
 
-func remove_pressed():
-	pass
-
 func spawn():
-	var _make_tag_window_node = _make_tag_window.instantiate()
+	var window = _make_tag_window.instantiate()
 	
-	if _make_tag_window_node.has_signal(\"new_tag_text\"): _make_tag_window_node.new_tag_text.connect(set_tag_text)
-	if _make_tag_window_node.has_signal(\"new_tag_color\"): _make_tag_window_node.new_tag_color.connect(set_color)
-	if _make_tag_window_node.has_signal(\"remove_tag\"): _make_tag_window_node.remove_tag.connect(_remove_tag)
-	if _make_tag_window_node.has_signal(\"make_tag\"): _make_tag_window_node.make_tag.connect(_make_tag)
+	if window.has_signal(\"new_tag_text\"): window.new_tag_text.connect(set_tag_text)
+	if window.has_signal(\"remove_tag\"): window.remove_tag.connect(_remove_tag)
+	if window.has_signal(\"make_tag\"): window.make_tag.connect(_make_tag)
+	if window.has_signal(\"new_tag_color\"): window.new_tag_color.connect(set_color)
 	
-	_spawn_make_window_point.add_child(_make_tag_window_node)
+	_spawn_make_window_point.add_child(window)
+	window.top_level = true
+	window.global_position = _spawn_make_window_point.global_position
 
 func off_settings_window():
 	_spawn_make_window_point.get_child(0).queue_free()
 
 func _remove_tag():
+	var clean_name = _tag_text.strip_edges()
+	SaveSystem.remove_tag_from_project(_project_id, clean_name)
+	EventBus.tag_count_change.emit.call_deferred(_project_id)
 	queue_free()
 
 func _make_tag():
-	SaveSystem.add_tag(_project_id, _tag_text, _color_tag)
+	var clean_name = _tag_text.strip_edges()
+	SaveSystem.add_tag(_project_id, clean_name, _color_tag)
 	print(_project_id, \" \", _tag_text, \" \", _color_tag)
 	tag_created.emit()
 "
@@ -89,7 +107,7 @@ func set_color(value: Color):
 	_unique_style.border_color = border_color
 "
 
-[node name="tag" type="RichTextLabel" unique_id=796151240 node_paths=PackedStringArray("_spawn_make_window_point", "_background")]
+[node name="tag" type="RichTextLabel" unique_id=796151240 node_paths=PackedStringArray("_spawn_make_window_point", "_background") groups=["user_tag"]]
 z_index = 1
 clip_contents = false
 offset_right = 23.0
