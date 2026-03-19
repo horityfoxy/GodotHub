@@ -181,6 +181,7 @@ stretch_mode = 5
 script = SubResource("GDScript_c0s5n")
 
 [node name="edit_symbol" type="TextureRect" parent="HBoxContainer/icon" unique_id=804720636]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0

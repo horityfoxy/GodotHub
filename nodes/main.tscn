@@ -2,6 +2,7 @@
 
 [ext_resource type="Theme" uid="uid://djhof4wp4fwjb" path="res://src/themes/global.tres" id="1_01b7x"]
 [ext_resource type="Texture2D" uid="uid://dtwh3afljtusf" path="res://src/sprites/settings/settings_logo.svg" id="1_xpfdc"]
+[ext_resource type="Theme" uid="uid://dv8k7ypaqymx5" path="res://src/themes/horityfox/buttons/header/header_button.tres" id="2_c3m70"]
 [ext_resource type="StyleBox" uid="uid://08qpf6v4ihhn" path="res://src/themes/horityfox/panels/project_panels.tres" id="3_7aemw"]
 [ext_resource type="Texture2D" uid="uid://bo2oikx4dyrx8" path="res://src/sprites/pen/pen_symbol.svg" id="3_c3m70"]
 [ext_resource type="Shader" uid="uid://buyvb3en62nqv" path="res://scripts/shaders/blur_background.gdshader" id="3_k8dvw"]
@@ -46,8 +47,18 @@ script/source = "extends HBoxContainer
 func _ready() -> void:
 	_settings_button.pressed.connect(EventBus.settings_window_enable.emit)
 	_edit_button.pressed.connect(EventBus.edit_button_pressed.emit)
-	_projects_button.pressed.connect(EventBus.switch_window_body.emit.bind(\"projects\"))
-	_varsions_button.pressed.connect(EventBus.switch_window_body.emit.bind(\"versions\"))
+	_projects_button.pressed.connect(_projects_enable)
+	_varsions_button.pressed.connect(_versions_enable)
+
+func _projects_enable():
+	EventBus.switch_window_body.emit(\"projects\")
+	_projects_button.button_pressed = true
+	_varsions_button.button_pressed = false
+
+func _versions_enable():
+	EventBus.switch_window_body.emit(\"versions\")
+	_varsions_button.button_pressed = true
+	_projects_button.button_pressed = false
 "
 
 [sub_resource type="GDScript" id="GDScript_u2n8d"]
@@ -582,12 +593,10 @@ offset_top = -15.5
 offset_bottom = 15.5
 grow_horizontal = 0
 grow_vertical = 2
-theme_override_colors/font_color = Color(0.3817033, 0.38170323, 0.38170335, 1)
-theme_override_font_sizes/font_size = 18
+theme = ExtResource("2_c3m70")
 toggle_mode = true
 button_pressed = true
 text = "  Проекты  "
-flat = true
 
 [node name="separator" type="ColorRect" parent="layout/header" unique_id=739218975]
 custom_minimum_size = Vector2(2, 24)
@@ -608,11 +617,9 @@ offset_top = -14.5
 offset_right = 101.0
 offset_bottom = 14.5
 grow_vertical = 2
-theme_override_colors/font_color = Color(0.38039216, 0.38039216, 0.38039216, 1)
-theme_override_font_sizes/font_size = 18
+theme = ExtResource("2_c3m70")
 toggle_mode = true
 text = "  Версии  "
-flat = true
 
 [node name="edit" type="Button" parent="layout/header" unique_id=1475068538]
 custom_minimum_size = Vector2(24, 24)

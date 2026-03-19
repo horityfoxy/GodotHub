@@ -38,6 +38,11 @@ func _make_tag():
 	if _text == \"\": return
 	make_tag.emit()
 	queue_free()
+
+func _input(event: InputEvent) -> void:
+	if not event is InputEventKey or not event.pressed: return
+	if event.is_action_pressed(\"ui_accept\"): _make_tag()
+	elif event.is_action_pressed(\"ui_cancel\"): remove_tag.emit()
 "
 
 [sub_resource type="GDScript" id="GDScript_rm8n2"]
@@ -122,7 +127,7 @@ mouse_filter = 2
 material = SubResource("ShaderMaterial_glaaw")
 custom_minimum_size = Vector2(18, 0)
 layout_mode = 2
-color = Color(0.69245815, 0, 0.14769739, 1)
+color = Color(0.27036092, 0.4025006, 0.32258186, 1)
 
 [node name="green" type="ColorRect" parent="VBoxContainer/colors" unique_id=646441329]
 material = SubResource("ShaderMaterial_glaaw")
@@ -142,12 +147,6 @@ custom_minimum_size = Vector2(18, 0)
 layout_mode = 2
 color = Color(0.6114037, 0.46480638, 0.10828685, 1)
 
-[node name="gray" type="ColorRect" parent="VBoxContainer/colors" unique_id=454883244]
-material = SubResource("ShaderMaterial_glaaw")
-custom_minimum_size = Vector2(18, 0)
-layout_mode = 2
-color = Color(0.36282945, 0.36282945, 0.36282945, 1)
-
 [node name="purple" type="ColorRect" parent="VBoxContainer/colors" unique_id=59930435]
 material = SubResource("ShaderMaterial_glaaw")
 custom_minimum_size = Vector2(18, 0)
@@ -159,6 +158,12 @@ material = SubResource("ShaderMaterial_glaaw")
 custom_minimum_size = Vector2(18, 0)
 layout_mode = 2
 color = Color(0.75686276, 0.10980392, 0.5176471, 1)
+
+[node name="gray" type="ColorRect" parent="VBoxContainer/colors" unique_id=454883244]
+material = SubResource("ShaderMaterial_glaaw")
+custom_minimum_size = Vector2(18, 0)
+layout_mode = 2
+color = Color(0.4026711, 0.33407202, 0.3964316, 1)
 
 [node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer" unique_id=1275405554]
 layout_mode = 2
