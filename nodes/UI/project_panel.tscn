@@ -3,8 +3,12 @@
 [ext_resource type="StyleBox" uid="uid://08qpf6v4ihhn" path="res://src/themes/horityfox/panels/project_panels.tres" id="1_c0s5n"]
 [ext_resource type="Texture2D" uid="uid://bx40bofn7yy27" path="res://icon.svg" id="1_q602k"]
 [ext_resource type="Texture2D" uid="uid://e7wkwvbepdoa" path="res://src/sprites/drag_and_drop/drag_and_drop_icon.svg" id="3_u3hnx"]
+[ext_resource type="StyleBox" uid="uid://u521iyx6gro2" path="res://src/themes/horityfox/tags/version_tag.tres" id="4_e77bd"]
+[ext_resource type="PackedScene" uid="uid://c4dcycfjtp4yh" path="res://nodes/UI/tag_project.tscn" id="4_ogak0"]
 [ext_resource type="Theme" uid="uid://dg2fsakmvw63" path="res://src/themes/horityfox/buttons/red/red_button.tres" id="4_u3hnx"]
+[ext_resource type="Texture2D" uid="uid://cualc1sqm0gbo" path="res://src/sprites/bin/bin_logo.svg" id="5_g1chl"]
 [ext_resource type="Theme" uid="uid://bme18nb43kckb" path="res://src/themes/horityfox/buttons/gray/gray_button.tres" id="5_u3hnx"]
+[ext_resource type="Theme" uid="uid://c06aoxshvcfhh" path="res://src/themes/horityfox/buttons/blue/blue_button.tres" id="6_x0pa5"]
 
 [sub_resource type="GDScript" id="GDScript_uyqn0"]
 script/source = "extends panel_base
@@ -20,7 +24,12 @@ var _version : String = \"\"
 func _ready() -> void:
 	if _edit_button: _edit_button.pressed.connect(_edit_project)
 	if _run_button: _run_button.pressed.connect(_run_project)
+	EventBus.edit_button_pressed.connect(_edit_mode_enable)
 	super()
+
+func _edit_mode_enable():
+	if _remove_button.visible: _remove_button.visible = false
+	else: _remove_button.visible = true
 
 func set_godot_path(value : String) -> void:
 	_godot_path = value
@@ -70,17 +79,31 @@ func setup():
 	pass
 "
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_x0pa5"]
-bg_color = Color(0.07450981, 0.52156866, 0.22745098, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.09803922, 0.6509804, 0.2901961, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
+[sub_resource type="GDScript" id="GDScript_e77bd"]
+script/source = "extends HBoxContainer
+
+@export var max_count : int = 3
+@export var _new_tag_button : Button
+@export var _tag_scene : PackedScene
+
+var _tag_count : int = 0
+
+func _ready() -> void:
+	_new_tag_button.pressed.connect(_spawn_tag)
+
+func _spawn_tag() -> void:
+	if _tag_count >= max_count: return
+	_tag_count = _tag_count + 1
+	_new_tag_button.hide()
+	var _spawned_tag = _tag_scene.instantiate()
+	add_child(_spawned_tag)
+	_spawned_tag.tag_created.connect(_show_create_tag_button)
+	move_child(_spawned_tag, get_child_count() - 2)
+
+func _show_create_tag_button() -> void:
+	if _tag_count >= max_count: return
+	_new_tag_button.show()
+"
 
 [node name="project_1" type="Panel" unique_id=426653167 node_paths=PackedStringArray("_edit_button", "_run_button", "_version_label", "_label_name", "_icon_texture", "_remove_button")]
 custom_minimum_size = Vector2(0, 72)
@@ -88,8 +111,8 @@ theme_override_styles/panel = ExtResource("1_c0s5n")
 script = SubResource("GDScript_uyqn0")
 _edit_button = NodePath("HBoxContainer/edit_project")
 _run_button = NodePath("HBoxContainer/run_project")
-_version_label = NodePath("HBoxContainer/version")
-_label_name = NodePath("HBoxContainer/name")
+_version_label = NodePath("HBoxContainer/name_and_tags/tags/version")
+_label_name = NodePath("HBoxContainer/name_and_tags/name")
 _icon_texture = NodePath("HBoxContainer/icon")
 _remove_button = NodePath("HBoxContainer/remove_project")
 
@@ -105,7 +128,7 @@ offset_right = -9.0
 offset_bottom = -8.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 8
 
 [node name="icon" type="TextureRect" parent="HBoxContainer" unique_id=416449460]
 custom_minimum_size = Vector2(56, 56)
@@ -128,12 +151,53 @@ texture = ExtResource("3_u3hnx")
 expand_mode = 2
 stretch_mode = 5
 
-[node name="name" type="Label" parent="HBoxContainer" unique_id=541838067]
+[node name="name_and_tags" type="VBoxContainer" parent="HBoxContainer" unique_id=1409305079]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 1
+
+[node name="name" type="Label" parent="HBoxContainer/name_and_tags" unique_id=541838067]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 14
 text = "Какой-то проект #1"
 clip_text = true
+
+[node name="tags" type="HBoxContainer" parent="HBoxContainer/name_and_tags" unique_id=538267628 node_paths=PackedStringArray("_new_tag_button")]
+layout_mode = 2
+theme_override_constants/separation = 4
+script = SubResource("GDScript_e77bd")
+_new_tag_button = NodePath("new_tag")
+_tag_scene = ExtResource("4_ogak0")
+
+[node name="version" type="Label" parent="HBoxContainer/name_and_tags/tags" unique_id=1447274246]
+z_index = 1
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = " 4.4.1 "
+
+[node name="background" type="Panel" parent="HBoxContainer/name_and_tags/tags/version" unique_id=401359081]
+z_index = -1
+custom_minimum_size = Vector2(0, 18)
+layout_mode = 1
+anchors_preset = 14
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_top = -9.0
+offset_bottom = 9.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_styles/panel = ExtResource("4_e77bd")
+
+[node name="new_tag" type="Button" parent="HBoxContainer/name_and_tags/tags" unique_id=1965237965]
+layout_mode = 2
+theme = ExtResource("5_u3hnx")
+theme_override_colors/font_color = Color(0.58431375, 0.58431375, 0.58431375, 1)
+theme_override_font_sizes/font_size = 13
+text = "+"
 
 [node name="remove_project" type="Button" parent="HBoxContainer" unique_id=293727372]
 custom_minimum_size = Vector2(0, 24)
@@ -141,27 +205,21 @@ layout_mode = 2
 size_flags_vertical = 4
 theme = ExtResource("4_u3hnx")
 theme_override_font_sizes/font_size = 14
-text = "Удалить"
+text = "  "
 
-[node name="version" type="Label" parent="HBoxContainer" unique_id=1447274246]
-z_index = 1
-layout_mode = 2
-theme_override_font_sizes/font_size = 14
-text = " 4.4.1 "
-
-[node name="panel" type="Panel" parent="HBoxContainer/version" unique_id=401359081]
-z_index = -1
-custom_minimum_size = Vector2(0, 24)
+[node name="TextureRect" type="TextureRect" parent="HBoxContainer/remove_project" unique_id=1394011469]
 layout_mode = 1
-anchors_preset = 14
-anchor_top = 0.5
+anchors_preset = 15
 anchor_right = 1.0
-anchor_bottom = 0.5
+anchor_bottom = 1.0
+offset_top = 3.0
+offset_bottom = -3.0
 grow_horizontal = 2
 grow_vertical = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
-theme_override_styles/panel = SubResource("StyleBoxFlat_x0pa5")
+mouse_filter = 2
+texture = ExtResource("5_g1chl")
+expand_mode = 2
+stretch_mode = 5
 
 [node name="run_project" type="Button" parent="HBoxContainer" unique_id=333768654]
 custom_minimum_size = Vector2(0, 24)
@@ -175,6 +233,6 @@ text = "Запустить"
 custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
 size_flags_vertical = 4
-theme = ExtResource("5_u3hnx")
+theme = ExtResource("6_x0pa5")
 theme_override_font_sizes/font_size = 14
 text = "Редактировать"

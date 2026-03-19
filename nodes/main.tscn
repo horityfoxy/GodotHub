@@ -3,10 +3,10 @@
 [ext_resource type="Theme" uid="uid://djhof4wp4fwjb" path="res://src/themes/global.tres" id="1_01b7x"]
 [ext_resource type="Texture2D" uid="uid://dtwh3afljtusf" path="res://src/sprites/settings/settings_logo.svg" id="1_xpfdc"]
 [ext_resource type="StyleBox" uid="uid://08qpf6v4ihhn" path="res://src/themes/horityfox/panels/project_panels.tres" id="3_7aemw"]
+[ext_resource type="Texture2D" uid="uid://bo2oikx4dyrx8" path="res://src/sprites/pen/pen_symbol.svg" id="3_c3m70"]
 [ext_resource type="Shader" uid="uid://buyvb3en62nqv" path="res://scripts/shaders/blur_background.gdshader" id="3_k8dvw"]
 [ext_resource type="Texture2D" uid="uid://bx40bofn7yy27" path="res://icon.svg" id="3_rshm7"]
 [ext_resource type="Texture2D" uid="uid://e7wkwvbepdoa" path="res://src/sprites/drag_and_drop/drag_and_drop_icon.svg" id="3_ufc4x"]
-[ext_resource type="Theme" uid="uid://b65ashqh3awip" path="res://src/themes/horityfox/buttons/green/green_button.tres" id="4_heg84"]
 [ext_resource type="StyleBox" uid="uid://bm2eusnrvc8qe" path="res://src/themes/horityfox/panels/window_drag_and_drop.tres" id="4_y2wr3"]
 [ext_resource type="Theme" uid="uid://dg2fsakmvw63" path="res://src/themes/horityfox/buttons/red/red_button.tres" id="7_c3m70"]
 [ext_resource type="Theme" uid="uid://c06aoxshvcfhh" path="res://src/themes/horityfox/buttons/blue/blue_button.tres" id="8_c3m70"]
@@ -39,11 +39,13 @@ script/source = "extends HBoxContainer
 
 @export_category(\"Buttons\")
 @export var _settings_button : Button
+@export var _edit_button : Button
 @export var _projects_button : Button
 @export var _varsions_button : Button
 
 func _ready() -> void:
 	_settings_button.pressed.connect(EventBus.settings_window_enable.emit)
+	_edit_button.pressed.connect(EventBus.edit_button_pressed.emit)
 	_projects_button.pressed.connect(EventBus.switch_window_body.emit.bind(\"projects\"))
 	_varsions_button.pressed.connect(EventBus.switch_window_body.emit.bind(\"versions\"))
 "
@@ -64,6 +66,7 @@ func _ready() -> void:
 	EventBus.switch_window_body.connect(switch_window_body)
 	_projects_window.position.x = 0
 	_versions_window.position.x = screen_width
+	_projects_window.show()
 	_versions_window.hide()
 
 func switch_window_body(state_name : String) -> void:
@@ -164,155 +167,6 @@ func _extract_version(config: ConfigFile) -> String:
 				return feature
 	return \"Unknown\"
 "
-
-[sub_resource type="Animation" id="Animation_c3m70"]
-length = 0.001
-tracks/0/type = "bezier"
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/path = NodePath("versions:position:x")
-tracks/0/interp = 1
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"handle_modes": PackedInt32Array(0),
-"points": PackedFloat32Array(1150, -0.25, 0, 0.25, 0),
-"times": PackedFloat32Array(0)
-}
-tracks/1/type = "bezier"
-tracks/1/imported = false
-tracks/1/enabled = true
-tracks/1/path = NodePath("versions:position:y")
-tracks/1/interp = 1
-tracks/1/loop_wrap = true
-tracks/1/keys = {
-"handle_modes": PackedInt32Array(0),
-"points": PackedFloat32Array(0, -0.25, 0, 0.25, 0),
-"times": PackedFloat32Array(0)
-}
-tracks/2/type = "value"
-tracks/2/imported = false
-tracks/2/enabled = true
-tracks/2/path = NodePath("versions:visible")
-tracks/2/interp = 1
-tracks/2/loop_wrap = true
-tracks/2/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
-"update": 1,
-"values": [false]
-}
-tracks/3/type = "bezier"
-tracks/3/imported = false
-tracks/3/enabled = true
-tracks/3/path = NodePath("projects:position:x")
-tracks/3/interp = 1
-tracks/3/loop_wrap = true
-tracks/3/keys = {
-"handle_modes": PackedInt32Array(0),
-"points": PackedFloat32Array(0, -0.25, 0, 0.25, 0),
-"times": PackedFloat32Array(0)
-}
-tracks/4/type = "bezier"
-tracks/4/imported = false
-tracks/4/enabled = true
-tracks/4/path = NodePath("projects:position:y")
-tracks/4/interp = 1
-tracks/4/loop_wrap = true
-tracks/4/keys = {
-"handle_modes": PackedInt32Array(0),
-"points": PackedFloat32Array(0, -0.25, 0, 0.25, 0),
-"times": PackedFloat32Array(0)
-}
-tracks/5/type = "value"
-tracks/5/imported = false
-tracks/5/enabled = true
-tracks/5/path = NodePath("projects:visible")
-tracks/5/interp = 1
-tracks/5/loop_wrap = true
-tracks/5/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
-"update": 1,
-"values": [true]
-}
-
-[sub_resource type="Animation" id="Animation_t4bcl"]
-resource_name = "next_window_body"
-length = 0.5
-tracks/0/type = "bezier"
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/path = NodePath("versions:position:x")
-tracks/0/interp = 1
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"handle_modes": PackedInt32Array(0, 0),
-"points": PackedFloat32Array(1150, -0.25, 0, 0.25, 0, 0, -0.16666667, 191.66667, 0, 0),
-"times": PackedFloat32Array(0, 0.5)
-}
-tracks/1/type = "bezier"
-tracks/1/imported = false
-tracks/1/enabled = true
-tracks/1/path = NodePath("versions:position:y")
-tracks/1/interp = 1
-tracks/1/loop_wrap = true
-tracks/1/keys = {
-"handle_modes": PackedInt32Array(0, 0),
-"points": PackedFloat32Array(0, -0.25, 0, 0.25, 0, 0, -0.16666667, 0, 0, 0),
-"times": PackedFloat32Array(0, 0.5)
-}
-tracks/2/type = "value"
-tracks/2/imported = false
-tracks/2/enabled = true
-tracks/2/path = NodePath("versions:visible")
-tracks/2/interp = 1
-tracks/2/loop_wrap = true
-tracks/2/keys = {
-"times": PackedFloat32Array(0, 0.01, 0.5),
-"transitions": PackedFloat32Array(1, 1, 1),
-"update": 1,
-"values": [false, true, true]
-}
-tracks/3/type = "bezier"
-tracks/3/imported = false
-tracks/3/enabled = true
-tracks/3/path = NodePath("projects:position:x")
-tracks/3/interp = 1
-tracks/3/loop_wrap = true
-tracks/3/keys = {
-"handle_modes": PackedInt32Array(0, 0),
-"points": PackedFloat32Array(0, -0.25, 0, 0.25, 0, -1150, -0.16666667, 191.66667, 0, 0),
-"times": PackedFloat32Array(0, 0.5)
-}
-tracks/4/type = "bezier"
-tracks/4/imported = false
-tracks/4/enabled = true
-tracks/4/path = NodePath("projects:position:y")
-tracks/4/interp = 1
-tracks/4/loop_wrap = true
-tracks/4/keys = {
-"handle_modes": PackedInt32Array(0, 0),
-"points": PackedFloat32Array(0, -0.25, 0, 0.25, 0, 0, -0.16666667, 0, 0, 0),
-"times": PackedFloat32Array(0, 0.5)
-}
-tracks/5/type = "value"
-tracks/5/imported = false
-tracks/5/enabled = true
-tracks/5/path = NodePath("projects:visible")
-tracks/5/interp = 1
-tracks/5/loop_wrap = true
-tracks/5/keys = {
-"times": PackedFloat32Array(0, 0.49, 0.5),
-"transitions": PackedFloat32Array(1, 1, 1),
-"update": 1,
-"values": [true, true, false]
-}
-
-[sub_resource type="AnimationLibrary" id="AnimationLibrary_ecu0m"]
-_data = {
-&"RESET": SubResource("Animation_c3m70"),
-&"next_window_body": SubResource("Animation_t4bcl")
-}
 
 [sub_resource type="GDScript" id="GDScript_d4yno"]
 script/source = "extends Control
@@ -679,17 +533,25 @@ grow_horizontal = 2
 grow_vertical = 2
 theme = ExtResource("1_01b7x")
 
-[node name="header" type="HBoxContainer" parent="layout" unique_id=612383905 node_paths=PackedStringArray("_settings_button", "_projects_button", "_varsions_button")]
+[node name="header" type="HBoxContainer" parent="layout" unique_id=612383905 node_paths=PackedStringArray("_settings_button", "_edit_button", "_projects_button", "_varsions_button")]
 custom_minimum_size = Vector2(0, 56)
 layout_mode = 2
 theme_override_constants/separation = 16
 alignment = 1
 script = SubResource("GDScript_usfbk")
 _settings_button = NodePath("settings")
+_edit_button = NodePath("edit")
 _projects_button = NodePath("projects/Button")
 _varsions_button = NodePath("versions/Button")
 
 [node name="spacer" type="ColorRect" parent="layout/header" unique_id=394431728]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+color = Color(0.078431375, 0.078431375, 0.078431375, 0)
+
+[node name="spacer2" type="ColorRect" parent="layout/header" unique_id=189533801]
 custom_minimum_size = Vector2(24, 24)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -744,6 +606,27 @@ toggle_mode = true
 text = "  Версии  "
 flat = true
 
+[node name="edit" type="Button" parent="layout/header" unique_id=1475068538]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme = ExtResource("8_t4bcl")
+
+[node name="icon" type="TextureRect" parent="layout/header/edit" unique_id=156282824]
+modulate = Color(0.585062, 0.585062, 0.58506197, 1)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_right = -4.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("3_c3m70")
+expand_mode = 4
+stretch_mode = 5
+
 [node name="settings" type="Button" parent="layout/header" unique_id=1220451796]
 custom_minimum_size = Vector2(24, 24)
 layout_mode = 2
@@ -757,8 +640,8 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 6.0
-offset_right = -6.0
+offset_left = 5.0
+offset_right = -5.0
 grow_horizontal = 2
 grow_vertical = 2
 texture = ExtResource("1_xpfdc")
@@ -831,7 +714,7 @@ offset_right = 109.5
 offset_bottom = 4.0
 grow_horizontal = 2
 grow_vertical = 0
-theme = ExtResource("4_heg84")
+theme = ExtResource("8_t4bcl")
 text = "Добавить проект с диска"
 
 [node name="versions" type="Control" parent="layout/body" unique_id=1081391640]
@@ -840,8 +723,7 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 1150.0
-offset_right = 1149.999
+offset_right = -0.0009765625
 grow_horizontal = 2
 grow_vertical = 2
 
@@ -924,7 +806,7 @@ text = "Удалить"
 custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
 size_flags_vertical = 4
-theme = ExtResource("8_t4bcl")
+theme = ExtResource("8_c3m70")
 theme_override_font_sizes/font_size = 14
 text = "Запустить"
 
@@ -941,11 +823,8 @@ offset_right = 110.0
 offset_bottom = 4.0
 grow_horizontal = 2
 grow_vertical = 0
-theme = ExtResource("8_c3m70")
+theme = ExtResource("8_t4bcl")
 text = "Загрузить новую версию"
-
-[node name="AnimationPlayer" type="AnimationPlayer" parent="layout/body" unique_id=1029339515]
-libraries/ = SubResource("AnimationLibrary_ecu0m")
 
 [node name="footer" type="HBoxContainer" parent="layout" unique_id=1092806049]
 custom_minimum_size = Vector2(0, 24)
@@ -973,7 +852,7 @@ grow_vertical = 2
 theme = ExtResource("1_01b7x")
 script = SubResource("GDScript_d4yno")
 _blur = NodePath("bg")
-_drag_and_drop_window = NodePath("drag_and_drop")
+_drag_and_drop_window = NodePath("drag_and_drop_project")
 _settings_window = NodePath("settings")
 
 [node name="bg" type="ColorRect" parent="popup_window" unique_id=644468900]
@@ -988,7 +867,7 @@ grow_vertical = 2
 color = Color(0.03529412, 0.03529412, 0.03529412, 0.3372549)
 script = SubResource("GDScript_cmhxe")
 
-[node name="drag_and_drop" type="Control" parent="popup_window" unique_id=1795121393 node_paths=PackedStringArray("_close_window_button", "_drag_and_drop_window")]
+[node name="drag_and_drop_project" type="Control" parent="popup_window" unique_id=1795121393 node_paths=PackedStringArray("_close_window_button", "_drag_and_drop_window")]
 visible = false
 z_index = 1
 layout_mode = 1
@@ -1001,13 +880,13 @@ script = SubResource("GDScript_1vlam")
 _close_window_button = NodePath("window/VBoxContainer/HBoxContainer/close")
 _drag_and_drop_window = NodePath("window")
 
-[node name="path_system" type="Node" parent="popup_window/drag_and_drop" unique_id=1489943928 node_paths=PackedStringArray("_scan_projects_button", "_close_window_button", "_file_dialog")]
+[node name="path_system" type="Node" parent="popup_window/drag_and_drop_project" unique_id=1489943928 node_paths=PackedStringArray("_scan_projects_button", "_close_window_button", "_file_dialog")]
 script = SubResource("GDScript_vr02l")
 _scan_projects_button = NodePath("../window/VBoxContainer/HBoxContainer/scan_project")
 _close_window_button = NodePath("../window/VBoxContainer/HBoxContainer/close")
 _file_dialog = NodePath("../../FileDialog")
 
-[node name="window" type="Panel" parent="popup_window/drag_and_drop" unique_id=1528090570 node_paths=PackedStringArray("drop_zone")]
+[node name="window" type="Panel" parent="popup_window/drag_and_drop_project" unique_id=1528090570 node_paths=PackedStringArray("drop_zone")]
 layout_mode = 1
 anchors_preset = -1
 anchor_left = 0.5
@@ -1024,7 +903,7 @@ theme_override_styles/panel = ExtResource("4_y2wr3")
 script = SubResource("GDScript_g653p")
 drop_zone = NodePath("drop_zone")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="popup_window/drag_and_drop/window" unique_id=916510419]
+[node name="VBoxContainer" type="VBoxContainer" parent="popup_window/drag_and_drop_project/window" unique_id=916510419]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -1034,18 +913,18 @@ offset_bottom = -12.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Label" type="Label" parent="popup_window/drag_and_drop/window/VBoxContainer" unique_id=165494374]
+[node name="Label" type="Label" parent="popup_window/drag_and_drop_project/window/VBoxContainer" unique_id=165494374]
 layout_mode = 2
 theme = ExtResource("14_01b7x")
 text = "Переместите или сканируйте папку с проектами"
 horizontal_alignment = 1
 clip_text = true
 
-[node name="icon" type="Control" parent="popup_window/drag_and_drop/window/VBoxContainer" unique_id=204135268]
+[node name="icon" type="Control" parent="popup_window/drag_and_drop_project/window/VBoxContainer" unique_id=204135268]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="TextureRect" type="TextureRect" parent="popup_window/drag_and_drop/window/VBoxContainer/icon" unique_id=531745612]
+[node name="TextureRect" type="TextureRect" parent="popup_window/drag_and_drop_project/window/VBoxContainer/icon" unique_id=531745612]
 modulate = Color(0.34407577, 0.34407577, 0.34407565, 1)
 layout_mode = 1
 anchors_preset = 8
@@ -1063,22 +942,22 @@ texture = ExtResource("3_ufc4x")
 expand_mode = 4
 stretch_mode = 5
 
-[node name="HBoxContainer" type="HBoxContainer" parent="popup_window/drag_and_drop/window/VBoxContainer" unique_id=217887422]
+[node name="HBoxContainer" type="HBoxContainer" parent="popup_window/drag_and_drop_project/window/VBoxContainer" unique_id=217887422]
 layout_mode = 2
 theme_override_constants/separation = 8
 alignment = 1
 
-[node name="scan_project" type="Button" parent="popup_window/drag_and_drop/window/VBoxContainer/HBoxContainer" unique_id=695065214]
+[node name="scan_project" type="Button" parent="popup_window/drag_and_drop_project/window/VBoxContainer/HBoxContainer" unique_id=695065214]
 layout_mode = 2
-theme = ExtResource("4_heg84")
+theme = ExtResource("8_c3m70")
 text = "Сканировать"
 
-[node name="close" type="Button" parent="popup_window/drag_and_drop/window/VBoxContainer/HBoxContainer" unique_id=2029715583]
+[node name="close" type="Button" parent="popup_window/drag_and_drop_project/window/VBoxContainer/HBoxContainer" unique_id=2029715583]
 layout_mode = 2
-theme = ExtResource("7_c3m70")
+theme = ExtResource("8_t4bcl")
 text = "Закрыть"
 
-[node name="drop_zone" type="Control" parent="popup_window/drag_and_drop/window" unique_id=223837236 node_paths=PackedStringArray("_path_system")]
+[node name="drop_zone" type="Control" parent="popup_window/drag_and_drop_project/window" unique_id=223837236 node_paths=PackedStringArray("_path_system")]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -1190,7 +1069,7 @@ text = "О программе"
 
 [node name="close" type="Button" parent="popup_window/settings/settings_window/VBoxContainer/HBoxContainer" unique_id=1872791804]
 layout_mode = 2
-theme = ExtResource("7_c3m70")
+theme = ExtResource("8_t4bcl")
 text = "Закрыть"
 
 [node name="about_window" type="Panel" parent="popup_window/settings" unique_id=266747320 node_paths=PackedStringArray("_view_window", "_godot_hub_button", "_lineseedjp_button", "_godot_engine_button", "_about_program_button", "_close_about_window_button")]
@@ -1377,13 +1256,205 @@ alignment = 1
 
 [node name="no" type="Button" parent="popup_window/accept_window/window/VBoxContainer/HBoxContainer" unique_id=575387094]
 layout_mode = 2
-theme = ExtResource("4_heg84")
+theme = ExtResource("8_c3m70")
 text = "Нет"
 
 [node name="yes" type="Button" parent="popup_window/accept_window/window/VBoxContainer/HBoxContainer" unique_id=1636238717]
 layout_mode = 2
-theme = ExtResource("7_c3m70")
+theme = ExtResource("8_t4bcl")
 text = "Да"
+
+[node name="download_godot_window" type="Control" parent="popup_window" unique_id=9572961]
+visible = false
+z_index = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="window" type="Panel" parent="popup_window/download_godot_window" unique_id=1883297188]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -334.0
+offset_top = -201.0
+offset_right = 334.0
+offset_bottom = 201.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = ExtResource("4_y2wr3")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="popup_window/download_godot_window/window" unique_id=1233013613]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 8
+
+[node name="HBoxContainer" type="HBoxContainer" parent="popup_window/download_godot_window/window/VBoxContainer" unique_id=1664501230]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="Panel" type="Panel" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer" unique_id=248275832]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = ExtResource("15_heg84")
+
+[node name="privacy_window" type="Control" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel" unique_id=1724254437]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 1.0
+offset_top = 1.0
+offset_right = -1.0
+offset_bottom = -1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Label" type="Label" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel/privacy_window" unique_id=23306093]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -314.0
+offset_top = -25.0
+offset_right = 314.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.5211406, 0.5211406, 0.5211405, 1)
+text = "Пожалуйста, разрешите Godot Hub доступ к интернету"
+horizontal_alignment = 1
+clip_text = true
+
+[node name="Button" type="Button" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel/privacy_window" unique_id=1591528002]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -42.5
+offset_top = 1.5
+offset_right = 42.5
+offset_bottom = 18.5
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("8_c3m70")
+theme_override_font_sizes/font_size = 14
+text = "Разрешить"
+
+[node name="parcing" type="VBoxContainer" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel" unique_id=974929392]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 1.0
+offset_right = -8.0
+offset_bottom = -1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="filters" type="Control" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel/parcing" unique_id=812555803]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel/parcing/filters" unique_id=125602752]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="CheckBox" type="CheckBox" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel/parcing/filters/HBoxContainer" unique_id=1113549055]
+layout_mode = 2
+text = "Godot 3x"
+
+[node name="CheckBox2" type="CheckBox" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel/parcing/filters/HBoxContainer" unique_id=1666293915]
+layout_mode = 2
+text = "Godot 4x"
+
+[node name="ScrollContainer" type="ScrollContainer" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel/parcing" unique_id=802356968]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel/parcing/ScrollContainer" unique_id=1632576858]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="engine_version_parsing" type="Panel" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel/parcing/ScrollContainer/VBoxContainer" unique_id=489789200]
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = ExtResource("3_7aemw")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel/parcing/ScrollContainer/VBoxContainer/engine_version_parsing" unique_id=474746474]
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 7.0
+offset_top = 7.0
+offset_right = -7.0
+offset_bottom = -7.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 5
+
+[node name="TextureRect" type="TextureRect" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel/parcing/ScrollContainer/VBoxContainer/engine_version_parsing/HBoxContainer" unique_id=63085477]
+layout_mode = 2
+texture = ExtResource("3_rshm7")
+expand_mode = 2
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel/parcing/ScrollContainer/VBoxContainer/engine_version_parsing/HBoxContainer" unique_id=562569475]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Godot 4.6.1"
+
+[node name="Button" type="Button" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel/parcing/ScrollContainer/VBoxContainer/engine_version_parsing/HBoxContainer" unique_id=562284340]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme = ExtResource("8_c3m70")
+theme_override_font_sizes/font_size = 12
+text = "загрузить"
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="popup_window/download_godot_window/window/VBoxContainer" unique_id=1375368766]
+layout_mode = 2
+alignment = 1
+
+[node name="scan_project" type="Button" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer2" unique_id=507896509]
+layout_mode = 2
+theme = ExtResource("8_t4bcl")
+text = "Найти на диске"
+
+[node name="close" type="Button" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer2" unique_id=332809183]
+layout_mode = 2
+size_flags_horizontal = 4
+theme = ExtResource("8_t4bcl")
+text = "Закрыть"
 
 [node name="FileDialog" type="FileDialog" parent="popup_window" unique_id=1338183012]
 oversampling_override = 1.0

@@ -85,6 +85,7 @@ corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
 [resource]
+default_font_size = 14
 Button/styles/disabled = SubResource("StyleBoxFlat_k4kh8")
 Button/styles/focus = SubResource("StyleBoxFlat_davke")
 Button/styles/hover = SubResource("StyleBoxFlat_u8anx")

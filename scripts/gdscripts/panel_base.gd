@@ -6,7 +6,9 @@ class_name panel_base
 @export var _remove_button : Button
 
 func _ready() -> void:
-	if _remove_button: _remove_button.pressed.connect(remove)
+	if _remove_button: 
+		_remove_button.pressed.connect(remove)
+		_remove_button.hide()
 	else: printerr("ERROR: _remove_button is not assigned in the Inspector!")
 
 func set_text(value : String = "") -> void:

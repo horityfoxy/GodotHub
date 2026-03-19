@@ -1,3 +1,8 @@
+res://src/themes/horityfox/tags/
+res://nodes/UI/
+res://scripts/shaders/
+res://src/themes/horityfox/line_edit/
+res://src/themes/horityfox/panels/
 res://src/themes/horityfox/buttons/gray/
 res://src/themes/horityfox/buttons/blue/
 res://src/themes/horityfox/buttons/red/
@@ -5,9 +10,6 @@ res://src/themes/horityfox/buttons/green/
 res://src/sprites/drag_and_drop/
 res://scripts/singleton/
 res://scripts/buttons/
-res://src/themes/horityfox/panels/
 res://src/themes/
 res://src/themes/fonts/
-res://scripts/shaders/
-res://nodes/UI/
 res://nodes/

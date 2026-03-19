@@ -13,3 +13,5 @@ signal project_found(project_file_path: String)
 ## BUTTON HEADER SIGNALS ##
 @warning_ignore("unused_signal")
 signal switch_window_body(value: String)
+@warning_ignore("unused_signal")
+signal edit_button_pressed
