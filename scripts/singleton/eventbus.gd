@@ -5,3 +5,11 @@ extends Node
 signal settings_window_enable
 @warning_ignore("unused_signal")
 signal drag_and_drop_window_enable
+
+## SCANING SYSTEM ##
+@warning_ignore("unused_signal")
+signal project_found(project_file_path: String)
+
+## BUTTON HEADER SIGNALS ##
+@warning_ignore("unused_signal")
+signal switch_window_body(value: String)

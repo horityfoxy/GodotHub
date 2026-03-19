@@ -2,14 +2,16 @@
 
 [ext_resource type="StyleBox" uid="uid://08qpf6v4ihhn" path="res://src/themes/horityfox/panels/project_panels.tres" id="1_c0s5n"]
 [ext_resource type="Texture2D" uid="uid://bx40bofn7yy27" path="res://icon.svg" id="1_q602k"]
-[ext_resource type="StyleBox" uid="uid://uuj5ruxop1m6" path="res://src/themes/horityfox/buttons/red/normal.tres" id="2_k1gx4"]
-[ext_resource type="StyleBox" uid="uid://caklaygw7x3wc" path="res://src/themes/horityfox/buttons/gray/normal.tres" id="3_t1c4u"]
+[ext_resource type="Texture2D" uid="uid://e7wkwvbepdoa" path="res://src/sprites/drag_and_drop/drag_and_drop_icon.svg" id="3_u3hnx"]
+[ext_resource type="Theme" uid="uid://dg2fsakmvw63" path="res://src/themes/horityfox/buttons/red/red_button.tres" id="4_u3hnx"]
+[ext_resource type="Theme" uid="uid://bme18nb43kckb" path="res://src/themes/horityfox/buttons/gray/gray_button.tres" id="5_u3hnx"]
 
 [sub_resource type="GDScript" id="GDScript_uyqn0"]
 script/source = "extends panel_base
 
 @export var _edit_button : Button
 @export var _run_button : Button
+@export var _version_label : Label
 
 var _project_path : String = \"\"
 var _godot_path : String = \"\"
@@ -26,11 +28,18 @@ func set_godot_path(value : String) -> void:
 func set_project_path(value : String) -> void:
 	_project_path = value
 
+func setup_icon():
+	_icon_texture.setup()
+
 func set_version(value : String) -> void:
 	_version = value
+	_version_label.text = \" \" + value + \" \"
 
 func remove() -> void:
 	print(\"obj has removed!\")
+	var full_path : String = _project_path + \"/project.godot\"
+	print(full_path)
+	SaveSystem.remove_project(full_path)
 	super()
 
 func _edit_project():
@@ -54,7 +63,14 @@ func launch_project_in_editor(_args : PackedStringArray) -> void:
 	else: printerr(\"ERROR: Failed to launch the project.\")
 "
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_a3ry3"]
+[sub_resource type="GDScript" id="GDScript_c0s5n"]
+script/source = "extends TextureRect
+
+func setup():
+	pass
+"
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_x0pa5"]
 bg_color = Color(0.07450981, 0.52156866, 0.22745098, 1)
 border_width_left = 1
 border_width_top = 1
@@ -66,12 +82,13 @@ corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
-[node name="project_1" type="Panel" unique_id=426653167 node_paths=PackedStringArray("_edit_button", "_run_button", "_label_name", "_icon_texture", "_remove_button")]
+[node name="project_1" type="Panel" unique_id=426653167 node_paths=PackedStringArray("_edit_button", "_run_button", "_version_label", "_label_name", "_icon_texture", "_remove_button")]
 custom_minimum_size = Vector2(0, 72)
 theme_override_styles/panel = ExtResource("1_c0s5n")
 script = SubResource("GDScript_uyqn0")
 _edit_button = NodePath("HBoxContainer/edit_project")
 _run_button = NodePath("HBoxContainer/run_project")
+_version_label = NodePath("HBoxContainer/version")
 _label_name = NodePath("HBoxContainer/name")
 _icon_texture = NodePath("HBoxContainer/icon")
 _remove_button = NodePath("HBoxContainer/remove_project")
@@ -96,6 +113,20 @@ layout_mode = 2
 texture = ExtResource("1_q602k")
 expand_mode = 4
 stretch_mode = 5
+script = SubResource("GDScript_c0s5n")
+
+[node name="edit_symbol" type="TextureRect" parent="HBoxContainer/icon" unique_id=804720636]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 8.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("3_u3hnx")
+expand_mode = 2
+stretch_mode = 5
 
 [node name="name" type="Label" parent="HBoxContainer" unique_id=541838067]
 layout_mode = 2
@@ -108,8 +139,8 @@ clip_text = true
 custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
 size_flags_vertical = 4
+theme = ExtResource("4_u3hnx")
 theme_override_font_sizes/font_size = 14
-theme_override_styles/normal = ExtResource("2_k1gx4")
 text = "Удалить"
 
 [node name="version" type="Label" parent="HBoxContainer" unique_id=1447274246]
@@ -130,20 +161,20 @@ grow_horizontal = 2
 grow_vertical = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
-theme_override_styles/panel = SubResource("StyleBoxFlat_a3ry3")
-
-[node name="edit_project" type="Button" parent="HBoxContainer" unique_id=1796640064]
-custom_minimum_size = Vector2(0, 24)
-layout_mode = 2
-size_flags_vertical = 4
-theme_override_font_sizes/font_size = 14
-theme_override_styles/normal = ExtResource("3_t1c4u")
-text = "Редактировать"
+theme_override_styles/panel = SubResource("StyleBoxFlat_x0pa5")
 
 [node name="run_project" type="Button" parent="HBoxContainer" unique_id=333768654]
 custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
 size_flags_vertical = 4
+theme = ExtResource("5_u3hnx")
 theme_override_font_sizes/font_size = 14
-theme_override_styles/normal = ExtResource("3_t1c4u")
 text = "Запустить"
+
+[node name="edit_project" type="Button" parent="HBoxContainer" unique_id=1796640064]
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+size_flags_vertical = 4
+theme = ExtResource("5_u3hnx")
+theme_override_font_sizes/font_size = 14
+text = "Редактировать"

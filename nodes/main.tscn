@@ -2,16 +2,15 @@
 
 [ext_resource type="Theme" uid="uid://djhof4wp4fwjb" path="res://src/themes/global.tres" id="1_01b7x"]
 [ext_resource type="Texture2D" uid="uid://dtwh3afljtusf" path="res://src/sprites/settings/settings_logo.svg" id="1_xpfdc"]
-[ext_resource type="PackedScene" uid="uid://cdm35govyflcd" path="res://nodes/UI/project_panel.tscn" id="2_a3ry3"]
-[ext_resource type="StyleBox" uid="uid://bu64x5yv714fq" path="res://src/themes/horityfox/buttons/green/normal.tres" id="3_6s2ku"]
 [ext_resource type="StyleBox" uid="uid://08qpf6v4ihhn" path="res://src/themes/horityfox/panels/project_panels.tres" id="3_7aemw"]
-[ext_resource type="StyleBox" uid="uid://caklaygw7x3wc" path="res://src/themes/horityfox/buttons/gray/normal.tres" id="3_gp064"]
 [ext_resource type="Shader" uid="uid://buyvb3en62nqv" path="res://scripts/shaders/blur_background.gdshader" id="3_k8dvw"]
 [ext_resource type="Texture2D" uid="uid://bx40bofn7yy27" path="res://icon.svg" id="3_rshm7"]
 [ext_resource type="Texture2D" uid="uid://e7wkwvbepdoa" path="res://src/sprites/drag_and_drop/drag_and_drop_icon.svg" id="3_ufc4x"]
-[ext_resource type="StyleBox" uid="uid://p58b3mqkmpwp" path="res://src/themes/horityfox/buttons/blue/normal.tres" id="4_pmn7o"]
+[ext_resource type="Theme" uid="uid://b65ashqh3awip" path="res://src/themes/horityfox/buttons/green/green_button.tres" id="4_heg84"]
 [ext_resource type="StyleBox" uid="uid://bm2eusnrvc8qe" path="res://src/themes/horityfox/panels/window_drag_and_drop.tres" id="4_y2wr3"]
-[ext_resource type="StyleBox" uid="uid://uuj5ruxop1m6" path="res://src/themes/horityfox/buttons/red/normal.tres" id="7_gp064"]
+[ext_resource type="Theme" uid="uid://dg2fsakmvw63" path="res://src/themes/horityfox/buttons/red/red_button.tres" id="7_c3m70"]
+[ext_resource type="Theme" uid="uid://c06aoxshvcfhh" path="res://src/themes/horityfox/buttons/blue/blue_button.tres" id="8_c3m70"]
+[ext_resource type="Theme" uid="uid://bme18nb43kckb" path="res://src/themes/horityfox/buttons/gray/gray_button.tres" id="8_t4bcl"]
 [ext_resource type="FontFile" uid="uid://crxptqsk1pq64" path="res://src/fonts/LINESeedJP/LINESeedJP-Bold.ttf" id="10_h0f1k"]
 [ext_resource type="Theme" uid="uid://d24t8jknpr3a4" path="res://src/themes/fonts/header.tres" id="14_01b7x"]
 [ext_resource type="Script" uid="uid://b3y1cfpuvbhgw" path="res://scripts/buttons/button_view_window.gd" id="15_c3m70"]
@@ -39,10 +38,70 @@ func launch_editor_only(godot_path: String) -> void:
 script/source = "extends HBoxContainer
 
 @export_category(\"Buttons\")
-@export var settings_button : Button
+@export var _settings_button : Button
+@export var _projects_button : Button
+@export var _varsions_button : Button
 
 func _ready() -> void:
-	settings_button.pressed.connect(EventBus.settings_window_enable.emit)
+	_settings_button.pressed.connect(EventBus.settings_window_enable.emit)
+	_projects_button.pressed.connect(EventBus.switch_window_body.emit.bind(\"projects\"))
+	_varsions_button.pressed.connect(EventBus.switch_window_body.emit.bind(\"versions\"))
+"
+
+[sub_resource type="GDScript" id="GDScript_u2n8d"]
+script/source = "extends Control
+
+@export var _projects_window : Control
+@export var _versions_window : Control
+
+enum WindowState { PROJECTS, VERSIONS }
+var _current_state : WindowState = WindowState.PROJECTS
+
+var _tween : Tween
+
+func _ready() -> void:
+	var screen_width = get_viewport_rect().size.x
+	EventBus.switch_window_body.connect(switch_window_body)
+	_projects_window.position.x = 0
+	_versions_window.position.x = screen_width
+	_versions_window.hide()
+
+func switch_window_body(state_name : String) -> void:
+	var new_state : WindowState
+	match state_name:
+		\"projects\": new_state = WindowState.PROJECTS
+		\"versions\": new_state = WindowState.VERSIONS
+		_: 
+			printerr(\"Incorrect header button value: \", state_name)
+			return
+	
+	if new_state == _current_state: return
+	_animate_swipe(new_state)
+	_current_state = new_state
+
+func _animate_swipe(target_state: WindowState) -> void:
+	if _tween and _tween.is_running(): _tween.kill()
+	
+	_tween = create_tween().set_parallel(true)
+	_tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	
+	var screen_width = get_viewport_rect().size.x
+	var duration = 0.55
+	
+	match target_state:
+		WindowState.VERSIONS:
+			_versions_window.show()
+			_tween.tween_property(_projects_window, \"position:x\", -screen_width, duration)
+			_tween.tween_property(_versions_window, \"position:x\", 0, duration)
+		WindowState.PROJECTS:
+			_projects_window.show()
+			_tween.tween_property(_versions_window, \"position:x\", screen_width, duration)
+			_tween.tween_property(_projects_window, \"position:x\", 0, duration)
+	
+	_tween.finished.connect(func():
+		_projects_window.visible = (target_state == WindowState.PROJECTS)
+		_versions_window.visible = (target_state == WindowState.VERSIONS)
+	) 
 "
 
 [sub_resource type="GDScript" id="GDScript_1n1q0"]
@@ -54,6 +113,206 @@ script/source = "extends Control
 func _ready() -> void:
 	add_project_button.pressed.connect(EventBus.drag_and_drop_window_enable.emit)
 "
+
+[sub_resource type="GDScript" id="GDScript_2toya"]
+script/source = "extends VBoxContainer
+
+@export var project_panel_scene : PackedScene = preload(\"res://nodes/UI/project_panel.tscn\")
+@export var path_system_node : Node 
+
+func _ready() -> void:
+	EventBus.project_found.connect(_on_project_found)
+	_load_existing_projects()
+
+func _on_project_found(project_file_path: String) -> void:
+	if SaveSystem.projects_paths.has(project_file_path): return
+	
+	_create_panel(project_file_path)
+	SaveSystem.add_project(project_file_path)
+
+func _load_existing_projects() -> void:
+	for path in SaveSystem.projects_paths:
+		_create_panel(path)
+
+## Spawn panel
+func _create_panel(full_path: String) -> void:
+	if not FileAccess.file_exists(full_path):
+		printerr(\"Проект не найден по пути: \", full_path)
+		return
+	
+	var config = ConfigFile.new()
+	var err = config.load(full_path)
+	if err != OK: return
+	
+	var p_name = config.get_value(\"application\", \"config/name\", \"Unnamed Project\")
+	var p_dir = full_path.get_base_dir()
+	var p_version = _extract_version(config)
+	
+	var panel = project_panel_scene.instantiate()
+	add_child(panel)
+	
+	panel.set_text(p_name)
+	panel.set_project_path(p_dir)
+	panel.set_version(p_version)
+	panel.setup_icon()
+
+func _extract_version(config: ConfigFile) -> String:
+	if config.has_section_key(\"application\", \"config/features\"):
+		var features = config.get_value(\"application\", \"config/features\")
+		for feature in features:
+			if feature.is_valid_float() or (feature.length() > 0 and feature[0].is_numeric()):
+				return feature
+	return \"Unknown\"
+"
+
+[sub_resource type="Animation" id="Animation_c3m70"]
+length = 0.001
+tracks/0/type = "bezier"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("versions:position:x")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"handle_modes": PackedInt32Array(0),
+"points": PackedFloat32Array(1150, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0)
+}
+tracks/1/type = "bezier"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("versions:position:y")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"handle_modes": PackedInt32Array(0),
+"points": PackedFloat32Array(0, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0)
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("versions:visible")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [false]
+}
+tracks/3/type = "bezier"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("projects:position:x")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"handle_modes": PackedInt32Array(0),
+"points": PackedFloat32Array(0, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0)
+}
+tracks/4/type = "bezier"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath("projects:position:y")
+tracks/4/interp = 1
+tracks/4/loop_wrap = true
+tracks/4/keys = {
+"handle_modes": PackedInt32Array(0),
+"points": PackedFloat32Array(0, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0)
+}
+tracks/5/type = "value"
+tracks/5/imported = false
+tracks/5/enabled = true
+tracks/5/path = NodePath("projects:visible")
+tracks/5/interp = 1
+tracks/5/loop_wrap = true
+tracks/5/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [true]
+}
+
+[sub_resource type="Animation" id="Animation_t4bcl"]
+resource_name = "next_window_body"
+length = 0.5
+tracks/0/type = "bezier"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("versions:position:x")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"handle_modes": PackedInt32Array(0, 0),
+"points": PackedFloat32Array(1150, -0.25, 0, 0.25, 0, 0, -0.16666667, 191.66667, 0, 0),
+"times": PackedFloat32Array(0, 0.5)
+}
+tracks/1/type = "bezier"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("versions:position:y")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"handle_modes": PackedInt32Array(0, 0),
+"points": PackedFloat32Array(0, -0.25, 0, 0.25, 0, 0, -0.16666667, 0, 0, 0),
+"times": PackedFloat32Array(0, 0.5)
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("versions:visible")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0, 0.01, 0.5),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [false, true, true]
+}
+tracks/3/type = "bezier"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("projects:position:x")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"handle_modes": PackedInt32Array(0, 0),
+"points": PackedFloat32Array(0, -0.25, 0, 0.25, 0, -1150, -0.16666667, 191.66667, 0, 0),
+"times": PackedFloat32Array(0, 0.5)
+}
+tracks/4/type = "bezier"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath("projects:position:y")
+tracks/4/interp = 1
+tracks/4/loop_wrap = true
+tracks/4/keys = {
+"handle_modes": PackedInt32Array(0, 0),
+"points": PackedFloat32Array(0, -0.25, 0, 0.25, 0, 0, -0.16666667, 0, 0, 0),
+"times": PackedFloat32Array(0, 0.5)
+}
+tracks/5/type = "value"
+tracks/5/imported = false
+tracks/5/enabled = true
+tracks/5/path = NodePath("projects:visible")
+tracks/5/interp = 1
+tracks/5/loop_wrap = true
+tracks/5/keys = {
+"times": PackedFloat32Array(0, 0.49, 0.5),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [true, true, false]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_ecu0m"]
+_data = {
+&"RESET": SubResource("Animation_c3m70"),
+&"next_window_body": SubResource("Animation_t4bcl")
+}
 
 [sub_resource type="GDScript" id="GDScript_d4yno"]
 script/source = "extends Control
@@ -121,19 +380,115 @@ script/source = "extends Control
 signal close_window
 
 @export_category(\"Buttons\")
-@export var _scan_projects_button : Button
 @export var _close_window_button : Button
+
+@export_category(\"Windows\")
+@export var _drag_and_drop_window : Panel
 
 func _ready() -> void:
 	hide()
 	_close_window_button.pressed.connect(disable)
 
 func enable() -> void:
+	_drag_and_drop_window.can_drop(true)
 	show()
 
 func disable() -> void:
+	_drag_and_drop_window.can_drop(false)
 	close_window.emit()
 	hide()
+"
+
+[sub_resource type="GDScript" id="GDScript_vr02l"]
+script/source = "extends Node
+
+@export_category(\"Buttons\")
+@export var _scan_projects_button : Button
+@export var _close_window_button : Button
+
+@export_category(\"Dialogs\")
+@export var _file_dialog : FileDialog
+
+func _ready() -> void:
+	_file_dialog.file_mode = FileDialog.FILE_MODE_OPEN_DIR
+	_file_dialog.access = FileDialog.ACCESS_FILESYSTEM
+	
+	_scan_projects_button.pressed.connect(_on_scan_projects_pressed)
+	_file_dialog.dir_selected.connect(_on_dir_selected)
+
+func _on_scan_projects_pressed() -> void:
+	_file_dialog.popup_centered_ratio(0.5)
+
+func _on_dir_selected(path: String) -> void:
+	_process_scan(path)
+
+func _process_scan(path: String) -> void:
+	_close_window_button.pressed.emit()
+	_scan_recursive(path)
+	print(\"Scan is completed\")
+
+func _scan_recursive(path: String) -> void:
+	var dir = DirAccess.open(path)
+	if not dir: return
+	
+	if dir.file_exists(\"project.godot\"):
+		var full_config_path = path.path_join(\"project.godot\")
+		_register_project(full_config_path)
+		return
+	
+	dir.list_dir_begin()
+	var file_name = dir.get_next()
+	
+	while file_name != \"\":
+		if dir.current_is_dir():
+			if not file_name.begins_with(\".\"): 
+				_scan_recursive(path.path_join(file_name))
+		file_name = dir.get_next()
+	dir.list_dir_end()
+
+func _register_project(full_path: String) -> void:
+	EventBus.project_found.emit(full_path)
+	print(\"Project was found in path: \", full_path)
+"
+
+[sub_resource type="GDScript" id="GDScript_g653p"]
+script/source = "extends Panel
+
+@export var drop_zone : Control
+
+func can_drop(value : bool):
+	drop_zone.can_drop(value)
+"
+
+[sub_resource type="GDScript" id="GDScript_jfcuo"]
+script/source = "extends Control
+
+@export var _path_system : Node
+
+var _is_can_drop : bool = false
+
+func _ready() -> void:
+	_is_can_drop = false
+	get_window().files_dropped.connect(_on_files_dropped)
+
+func can_drop(value : bool):
+	_is_can_drop = value
+
+func _on_files_dropped(files: PackedStringArray) -> void:
+	if _is_can_drop == false: return
+	if get_rect().has_point(get_local_mouse_position()):
+		_handle_drop_logic(files)
+
+func _handle_drop_logic(files: PackedStringArray) -> void:
+	if files.is_empty(): return
+	
+	var raw_path = files[0]
+	var clean_path = raw_path.replace(\"\\\\\", \"/\").simplify_path()
+	
+	if DirAccess.dir_exists_absolute(clean_path):
+		if _path_system and _path_system.has_method(\"_process_scan\"):
+			_path_system._process_scan(clean_path)
+			print(\"Передано на сканирование: \", clean_path)
 "
 
 [sub_resource type="GDScript" id="GDScript_c3m70"]
@@ -324,13 +679,15 @@ grow_horizontal = 2
 grow_vertical = 2
 theme = ExtResource("1_01b7x")
 
-[node name="header" type="HBoxContainer" parent="layout" unique_id=612383905 node_paths=PackedStringArray("settings_button")]
+[node name="header" type="HBoxContainer" parent="layout" unique_id=612383905 node_paths=PackedStringArray("_settings_button", "_projects_button", "_varsions_button")]
 custom_minimum_size = Vector2(0, 56)
 layout_mode = 2
 theme_override_constants/separation = 16
 alignment = 1
 script = SubResource("GDScript_usfbk")
-settings_button = NodePath("settings")
+_settings_button = NodePath("settings")
+_projects_button = NodePath("projects/Button")
+_varsions_button = NodePath("versions/Button")
 
 [node name="spacer" type="ColorRect" parent="layout/header" unique_id=394431728]
 custom_minimum_size = Vector2(24, 24)
@@ -339,25 +696,27 @@ size_flags_horizontal = 4
 size_flags_vertical = 4
 color = Color(0.078431375, 0.078431375, 0.078431375, 0)
 
-[node name="versions" type="Control" parent="layout/header" unique_id=176306662]
+[node name="projects" type="Control" parent="layout/header" unique_id=608809357]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Button" type="Button" parent="layout/header/versions" unique_id=1388477591]
+[node name="Button" type="Button" parent="layout/header/projects" unique_id=300001126]
 layout_mode = 1
 anchors_preset = 6
 anchor_left = 1.0
 anchor_top = 0.5
 anchor_right = 1.0
 anchor_bottom = 0.5
-offset_left = -8.0
-offset_top = -4.0
-offset_bottom = 4.0
+offset_left = -115.0
+offset_top = -15.5
+offset_bottom = 15.5
 grow_horizontal = 0
 grow_vertical = 2
+theme_override_colors/font_color = Color(0.3817033, 0.38170323, 0.38170335, 1)
 theme_override_font_sizes/font_size = 18
 toggle_mode = true
-text = "  Версии  "
+button_pressed = true
+text = "  Проекты  "
 flat = true
 
 [node name="separator" type="ColorRect" parent="layout/header" unique_id=739218975]
@@ -366,23 +725,23 @@ layout_mode = 2
 size_flags_vertical = 4
 color = Color(0.25882354, 0.25882354, 0.25882354, 1)
 
-[node name="projects" type="Control" parent="layout/header" unique_id=608809357]
+[node name="versions" type="Control" parent="layout/header" unique_id=176306662]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Button" type="Button" parent="layout/header/projects" unique_id=300001126]
+[node name="Button" type="Button" parent="layout/header/versions" unique_id=1388477591]
 layout_mode = 1
 anchors_preset = 4
 anchor_top = 0.5
 anchor_bottom = 0.5
-offset_top = -15.5
-offset_right = 83.0
-offset_bottom = 15.5
+offset_top = -14.5
+offset_right = 101.0
+offset_bottom = 14.5
 grow_vertical = 2
-theme_override_colors/font_color = Color(0.3817033, 0.38170323, 0.38170335, 1)
+theme_override_colors/font_color = Color(0.38039216, 0.38039216, 0.38039216, 1)
 theme_override_font_sizes/font_size = 18
 toggle_mode = true
-text = "  Проекты  "
+text = "  Версии  "
 flat = true
 
 [node name="settings" type="Button" parent="layout/header" unique_id=1220451796]
@@ -390,7 +749,7 @@ custom_minimum_size = Vector2(24, 24)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
-theme_override_styles/normal = ExtResource("3_gp064")
+theme = ExtResource("8_t4bcl")
 
 [node name="icon" type="TextureRect" parent="layout/header/settings" unique_id=633796110]
 modulate = Color(0.585062, 0.585062, 0.58506197, 1)
@@ -406,9 +765,74 @@ texture = ExtResource("1_xpfdc")
 expand_mode = 4
 stretch_mode = 5
 
-[node name="body" type="Control" parent="layout" unique_id=1831959156]
+[node name="body" type="Control" parent="layout" unique_id=1831959156 node_paths=PackedStringArray("_projects_window", "_versions_window")]
 layout_mode = 2
 size_flags_vertical = 3
+script = SubResource("GDScript_u2n8d")
+_projects_window = NodePath("projects")
+_versions_window = NodePath("versions")
+
+[node name="projects" type="Control" parent="layout/body" unique_id=1588472335 node_paths=PackedStringArray("add_project_button")]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = SubResource("GDScript_1n1q0")
+add_project_button = NodePath("add_project")
+
+[node name="hint" type="Label" parent="layout/body/projects" unique_id=1863291649]
+visible = false
+layout_mode = 1
+anchors_preset = -1
+anchor_left = -0.013
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = 79.677
+offset_top = -57.0
+offset_right = -65.0
+offset_bottom = 53.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.3328807, 0.33288068, 0.33288074, 1)
+theme_override_font_sizes/font_size = 24
+text = "Добавьте проект с диска или создайте его,
+запустив Godot Engine"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="layout/body/projects" unique_id=1205813245]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_bottom = -44.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="layout/body/projects/ScrollContainer" unique_id=622089978]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+script = SubResource("GDScript_2toya")
+
+[node name="add_project" type="Button" parent="layout/body/projects" unique_id=1084465341]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -109.5
+offset_top = -21.0
+offset_right = 109.5
+offset_bottom = 4.0
+grow_horizontal = 2
+grow_vertical = 0
+theme = ExtResource("4_heg84")
+text = "Добавить проект с диска"
 
 [node name="versions" type="Control" parent="layout/body" unique_id=1081391640]
 visible = false
@@ -416,6 +840,8 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 1150.0
+offset_right = 1149.999
 grow_horizontal = 2
 grow_vertical = 2
 
@@ -490,16 +916,16 @@ clip_text = true
 custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
 size_flags_vertical = 4
+theme = ExtResource("7_c3m70")
 theme_override_font_sizes/font_size = 14
-theme_override_styles/normal = ExtResource("7_gp064")
 text = "Удалить"
 
 [node name="edit_project" type="Button" parent="layout/body/versions/ScrollContainer/VBoxContainer/version_1/HBoxContainer" unique_id=1260078518]
 custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
 size_flags_vertical = 4
+theme = ExtResource("8_t4bcl")
 theme_override_font_sizes/font_size = 14
-theme_override_styles/normal = ExtResource("3_gp064")
 text = "Запустить"
 
 [node name="get_new_version" type="Button" parent="layout/body/versions" unique_id=486015608]
@@ -515,72 +941,11 @@ offset_right = 110.0
 offset_bottom = 4.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_styles/normal = ExtResource("4_pmn7o")
+theme = ExtResource("8_c3m70")
 text = "Загрузить новую версию"
 
-[node name="projects" type="Control" parent="layout/body" unique_id=1588472335 node_paths=PackedStringArray("add_project_button")]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-script = SubResource("GDScript_1n1q0")
-add_project_button = NodePath("add_project")
-
-[node name="hint" type="Label" parent="layout/body/projects" unique_id=1863291649]
-visible = false
-layout_mode = 1
-anchors_preset = -1
-anchor_left = -0.013
-anchor_top = 0.5
-anchor_right = 1.0
-anchor_bottom = 0.5
-offset_left = 79.677
-offset_top = -57.0
-offset_right = -65.0
-offset_bottom = 53.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_colors/font_color = Color(0.3328807, 0.33288068, 0.33288074, 1)
-theme_override_font_sizes/font_size = 24
-text = "Добавьте проект с диска или создайте его,
-запустив Godot Engine"
-horizontal_alignment = 1
-autowrap_mode = 2
-
-[node name="ScrollContainer" type="ScrollContainer" parent="layout/body/projects" unique_id=1205813245]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_bottom = -44.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="VBoxContainer" type="VBoxContainer" parent="layout/body/projects/ScrollContainer" unique_id=622089978]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 8
-
-[node name="project_1" parent="layout/body/projects/ScrollContainer/VBoxContainer" unique_id=426653167 instance=ExtResource("2_a3ry3")]
-layout_mode = 2
-
-[node name="add_project" type="Button" parent="layout/body/projects" unique_id=1084465341]
-layout_mode = 1
-anchors_preset = 7
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -109.5
-offset_top = -21.0
-offset_right = 109.5
-offset_bottom = 4.0
-grow_horizontal = 2
-grow_vertical = 0
-theme_override_styles/normal = ExtResource("3_6s2ku")
-text = "Добавить проект с диска"
+[node name="AnimationPlayer" type="AnimationPlayer" parent="layout/body" unique_id=1029339515]
+libraries/ = SubResource("AnimationLibrary_ecu0m")
 
 [node name="footer" type="HBoxContainer" parent="layout" unique_id=1092806049]
 custom_minimum_size = Vector2(0, 24)
@@ -623,7 +988,7 @@ grow_vertical = 2
 color = Color(0.03529412, 0.03529412, 0.03529412, 0.3372549)
 script = SubResource("GDScript_cmhxe")
 
-[node name="drag_and_drop" type="Control" parent="popup_window" unique_id=1795121393 node_paths=PackedStringArray("_scan_projects_button", "_close_window_button")]
+[node name="drag_and_drop" type="Control" parent="popup_window" unique_id=1795121393 node_paths=PackedStringArray("_close_window_button", "_drag_and_drop_window")]
 visible = false
 z_index = 1
 layout_mode = 1
@@ -633,10 +998,16 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = SubResource("GDScript_1vlam")
-_scan_projects_button = NodePath("Panel/VBoxContainer/HBoxContainer/scan_project")
-_close_window_button = NodePath("Panel/VBoxContainer/HBoxContainer/close")
+_close_window_button = NodePath("window/VBoxContainer/HBoxContainer/close")
+_drag_and_drop_window = NodePath("window")
 
-[node name="Panel" type="Panel" parent="popup_window/drag_and_drop" unique_id=1528090570]
+[node name="path_system" type="Node" parent="popup_window/drag_and_drop" unique_id=1489943928 node_paths=PackedStringArray("_scan_projects_button", "_close_window_button", "_file_dialog")]
+script = SubResource("GDScript_vr02l")
+_scan_projects_button = NodePath("../window/VBoxContainer/HBoxContainer/scan_project")
+_close_window_button = NodePath("../window/VBoxContainer/HBoxContainer/close")
+_file_dialog = NodePath("../../FileDialog")
+
+[node name="window" type="Panel" parent="popup_window/drag_and_drop" unique_id=1528090570 node_paths=PackedStringArray("drop_zone")]
 layout_mode = 1
 anchors_preset = -1
 anchor_left = 0.5
@@ -650,8 +1021,10 @@ offset_bottom = 175.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = ExtResource("4_y2wr3")
+script = SubResource("GDScript_g653p")
+drop_zone = NodePath("drop_zone")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="popup_window/drag_and_drop/Panel" unique_id=916510419]
+[node name="VBoxContainer" type="VBoxContainer" parent="popup_window/drag_and_drop/window" unique_id=916510419]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -661,18 +1034,18 @@ offset_bottom = -12.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Label" type="Label" parent="popup_window/drag_and_drop/Panel/VBoxContainer" unique_id=165494374]
+[node name="Label" type="Label" parent="popup_window/drag_and_drop/window/VBoxContainer" unique_id=165494374]
 layout_mode = 2
 theme = ExtResource("14_01b7x")
 text = "Переместите или сканируйте папку с проектами"
 horizontal_alignment = 1
 clip_text = true
 
-[node name="icon" type="Control" parent="popup_window/drag_and_drop/Panel/VBoxContainer" unique_id=204135268]
+[node name="icon" type="Control" parent="popup_window/drag_and_drop/window/VBoxContainer" unique_id=204135268]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="TextureRect" type="TextureRect" parent="popup_window/drag_and_drop/Panel/VBoxContainer/icon" unique_id=531745612]
+[node name="TextureRect" type="TextureRect" parent="popup_window/drag_and_drop/window/VBoxContainer/icon" unique_id=531745612]
 modulate = Color(0.34407577, 0.34407577, 0.34407565, 1)
 layout_mode = 1
 anchors_preset = 8
@@ -690,20 +1063,31 @@ texture = ExtResource("3_ufc4x")
 expand_mode = 4
 stretch_mode = 5
 
-[node name="HBoxContainer" type="HBoxContainer" parent="popup_window/drag_and_drop/Panel/VBoxContainer" unique_id=217887422]
+[node name="HBoxContainer" type="HBoxContainer" parent="popup_window/drag_and_drop/window/VBoxContainer" unique_id=217887422]
 layout_mode = 2
 theme_override_constants/separation = 8
 alignment = 1
 
-[node name="scan_project" type="Button" parent="popup_window/drag_and_drop/Panel/VBoxContainer/HBoxContainer" unique_id=695065214]
+[node name="scan_project" type="Button" parent="popup_window/drag_and_drop/window/VBoxContainer/HBoxContainer" unique_id=695065214]
 layout_mode = 2
-theme_override_styles/normal = ExtResource("3_6s2ku")
+theme = ExtResource("4_heg84")
 text = "Сканировать"
 
-[node name="close" type="Button" parent="popup_window/drag_and_drop/Panel/VBoxContainer/HBoxContainer" unique_id=2029715583]
+[node name="close" type="Button" parent="popup_window/drag_and_drop/window/VBoxContainer/HBoxContainer" unique_id=2029715583]
 layout_mode = 2
-theme_override_styles/normal = ExtResource("7_gp064")
+theme = ExtResource("7_c3m70")
 text = "Закрыть"
+
+[node name="drop_zone" type="Control" parent="popup_window/drag_and_drop/window" unique_id=223837236 node_paths=PackedStringArray("_path_system")]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = SubResource("GDScript_jfcuo")
+_path_system = NodePath("../../path_system")
 
 [node name="settings" type="Control" parent="popup_window" unique_id=1532549054 node_paths=PackedStringArray("_settings_window")]
 visible = false
@@ -801,12 +1185,12 @@ alignment = 1
 
 [node name="about" type="Button" parent="popup_window/settings/settings_window/VBoxContainer/HBoxContainer" unique_id=514248537]
 layout_mode = 2
-theme_override_styles/normal = ExtResource("4_pmn7o")
+theme = ExtResource("8_c3m70")
 text = "О программе"
 
 [node name="close" type="Button" parent="popup_window/settings/settings_window/VBoxContainer/HBoxContainer" unique_id=1872791804]
 layout_mode = 2
-theme_override_styles/normal = ExtResource("7_gp064")
+theme = ExtResource("7_c3m70")
 text = "Закрыть"
 
 [node name="about_window" type="Panel" parent="popup_window/settings" unique_id=266747320 node_paths=PackedStringArray("_view_window", "_godot_hub_button", "_lineseedjp_button", "_godot_engine_button", "_about_program_button", "_close_about_window_button")]
@@ -889,7 +1273,7 @@ size_flags_vertical = 3
 
 [node name="close" type="Button" parent="popup_window/settings/about_window/HBoxContainer/VBoxContainer" unique_id=29047539]
 layout_mode = 2
-theme_override_styles/normal = ExtResource("7_gp064")
+theme = ExtResource("7_c3m70")
 text = "Закрыть"
 clip_text = true
 
@@ -950,7 +1334,7 @@ offset_bottom = 324.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Panel" type="Panel" parent="popup_window/accept_window" unique_id=1575082110]
+[node name="window" type="Panel" parent="popup_window/accept_window" unique_id=1575082110]
 layout_mode = 1
 anchors_preset = -1
 anchor_right = 1.0
@@ -963,7 +1347,7 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = ExtResource("4_y2wr3")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="popup_window/accept_window/Panel" unique_id=836335441]
+[node name="VBoxContainer" type="VBoxContainer" parent="popup_window/accept_window/window" unique_id=836335441]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -975,28 +1359,36 @@ offset_bottom = -9.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Label" type="Label" parent="popup_window/accept_window/Panel/VBoxContainer" unique_id=968356342]
+[node name="Label" type="Label" parent="popup_window/accept_window/window/VBoxContainer" unique_id=968356342]
 layout_mode = 2
 theme = ExtResource("14_01b7x")
 text = "Вы уверены?"
 horizontal_alignment = 1
 clip_text = true
 
-[node name="separator" type="Control" parent="popup_window/accept_window/Panel/VBoxContainer" unique_id=476132989]
+[node name="separator" type="Control" parent="popup_window/accept_window/window/VBoxContainer" unique_id=476132989]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="HBoxContainer" type="VBoxContainer" parent="popup_window/accept_window/Panel/VBoxContainer" unique_id=161975887]
+[node name="HBoxContainer" type="VBoxContainer" parent="popup_window/accept_window/window/VBoxContainer" unique_id=161975887]
 layout_mode = 2
 theme_override_constants/separation = 8
 alignment = 1
 
-[node name="scan_project" type="Button" parent="popup_window/accept_window/Panel/VBoxContainer/HBoxContainer" unique_id=575387094]
+[node name="no" type="Button" parent="popup_window/accept_window/window/VBoxContainer/HBoxContainer" unique_id=575387094]
 layout_mode = 2
-theme_override_styles/normal = ExtResource("3_6s2ku")
+theme = ExtResource("4_heg84")
 text = "Нет"
 
-[node name="close" type="Button" parent="popup_window/accept_window/Panel/VBoxContainer/HBoxContainer" unique_id=1636238717]
+[node name="yes" type="Button" parent="popup_window/accept_window/window/VBoxContainer/HBoxContainer" unique_id=1636238717]
 layout_mode = 2
-theme_override_styles/normal = ExtResource("7_gp064")
+theme = ExtResource("7_c3m70")
 text = "Да"
+
+[node name="FileDialog" type="FileDialog" parent="popup_window" unique_id=1338183012]
+oversampling_override = 1.0
+title = "Open a Directory"
+position = Vector2i(0, 36)
+file_mode = 2
+access = 2
+use_native_dialog = true

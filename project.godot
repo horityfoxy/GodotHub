@@ -13,11 +13,18 @@ config_version=5
 config/name="Godot Hub"
 run/main_scene="uid://bn5m56kyvj02p"
 config/features=PackedStringArray("4.6", "Forward Plus")
-config/icon="res://icon.svg"
+config/icon="uid://e7wkwvbepdoa"
 
 [autoload]
 
 EventBus="*uid://bfy15g55lxyhg"
+SaveSystem="*uid://bmr7acyerr6rd"
+
+[display]
+
+window/subwindows/embed_subwindows=false
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
 
 [physics]
 

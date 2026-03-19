@@ -1,5 +1,7 @@
 res://nodes/main.tscn
-res://src/themes/global.tres
+res://src/themes/horityfox/buttons/red/red_button.tres
+res://src/themes/horityfox/buttons/gray/gray_button.tres
 res://scripts/shaders/blur_background.gdshader
-res://scripts/buttons/button_view_window.gd
-res://scripts/singleton/eventbus.gd
+res://src/themes/global.tres
+res://src/themes/horityfox/buttons/green/green_button.tres
+res://src/themes/horityfox/buttons/blue/blue_button.tres
