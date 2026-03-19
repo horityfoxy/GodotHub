@@ -16,26 +16,34 @@ script/source = "extends panel_base
 @export var _edit_button : Button
 @export var _run_button : Button
 @export var _version_label : Label
+@export var _tags_zones : HBoxContainer
 
 var _project_path : String = \"\"
 var _godot_path : String = \"\"
 var _version : String = \"\"
+var _project_id : String = \"\"
 
 func _ready() -> void:
 	if _edit_button: _edit_button.pressed.connect(_edit_project)
 	if _run_button: _run_button.pressed.connect(_run_project)
 	EventBus.edit_button_pressed.connect(_edit_mode_enable)
+	_tags_zones._set_id(_get_id())
 	super()
 
-func _edit_mode_enable():
+func setup_tags():
+	print(\"ID: \", _get_id())
+	_tags_zones._set_id(_get_id())
+	_tags_zones.load_tag()
+
+func set_id(value : String): _project_id = value
+
+func _edit_mode_enable() -> void:
 	if _remove_button.visible: _remove_button.visible = false
 	else: _remove_button.visible = true
 
-func set_godot_path(value : String) -> void:
-	_godot_path = value
+func set_godot_path(value : String) -> void: _godot_path = value
 
-func set_project_path(value : String) -> void:
-	_project_path = value
+func set_project_path(value : String) -> void: _project_path = value
 
 func setup_icon():
 	_icon_texture.setup()
@@ -45,17 +53,12 @@ func set_version(value : String) -> void:
 	_version_label.text = \" \" + value + \" \"
 
 func remove() -> void:
-	print(\"obj has removed!\")
-	var full_path : String = _project_path + \"/project.godot\"
-	print(full_path)
-	SaveSystem.remove_project(full_path)
+	SaveSystem.remove_project(_project_id)
 	super()
 
-func _edit_project():
-	launch_project_in_editor([\"--path\", _project_path, \"-e\"])
+func _edit_project(): launch_project_in_editor([\"--path\", _project_path, \"-e\"])
 
-func _run_project():
-	launch_project_in_editor([\"--path\", _project_path])
+func _run_project(): launch_project_in_editor([\"--path\", _project_path])
 
 func launch_project_in_editor(_args : PackedStringArray) -> void:
 	if not FileAccess.file_exists(_godot_path):
@@ -70,6 +73,8 @@ func launch_project_in_editor(_args : PackedStringArray) -> void:
 	if pid > 0: 
 		if _args.has(\"-e\"): get_tree().quit()
 	else: printerr(\"ERROR: Failed to launch the project.\")
+
+func _get_id() -> String: return _project_id
 "
 
 [sub_resource type="GDScript" id="GDScript_c0s5n"]
@@ -87,31 +92,60 @@ script/source = "extends HBoxContainer
 @export var _tag_scene : PackedScene
 
 var _tag_count : int = 0
+var _project_id : String = \"\"
 
 func _ready() -> void:
 	_new_tag_button.pressed.connect(_spawn_tag)
+	_new_tag_button.hide()
 
 func _spawn_tag() -> void:
 	if _tag_count >= max_count: return
 	_tag_count = _tag_count + 1
 	_new_tag_button.hide()
+	
 	var _spawned_tag = _tag_scene.instantiate()
 	add_child(_spawned_tag)
+	_spawned_tag.set_project_id(_project_id)
 	_spawned_tag.tag_created.connect(_show_create_tag_button)
 	move_child(_spawned_tag, get_child_count() - 2)
+
+func _set_id(value : String):
+	_project_id = value
 
 func _show_create_tag_button() -> void:
 	if _tag_count >= max_count: return
 	_new_tag_button.show()
+
+func load_tag():
+	var tags_array = SaveSystem.get_project_tags(_project_id)
+	if tags_array.is_empty(): 
+		_show_create_tag_button()
+		return
+		
+	for tag_data in tags_array:
+		_tag_count = _tag_count + 1
+		var _spawned_tag = _tag_scene.instantiate()
+		add_child(_spawned_tag)
+		_spawned_tag.set_project_id(_project_id) 
+		
+		_spawned_tag.set_tag_text(tag_data[\"name\"])
+		var color_str = \"Color\" + tag_data[\"color\"]
+		_spawned_tag.set_color(str_to_var(color_str))
+		if _spawned_tag.has_signal(\"tag_created\"):
+			_spawned_tag.tag_created.connect(_show_create_tag_button)
+		if _spawned_tag.has_method(\"off_settings_window\"):
+			_spawned_tag.off_settings_window()
+		move_child(_spawned_tag, get_child_count() - 2)
 "
 
-[node name="project_1" type="Panel" unique_id=426653167 node_paths=PackedStringArray("_edit_button", "_run_button", "_version_label", "_label_name", "_icon_texture", "_remove_button")]
+[node name="project_1" type="Panel" unique_id=426653167 node_paths=PackedStringArray("_edit_button", "_run_button", "_version_label", "_tags_zones", "_label_name", "_icon_texture", "_remove_button")]
 custom_minimum_size = Vector2(0, 72)
 theme_override_styles/panel = ExtResource("1_c0s5n")
 script = SubResource("GDScript_uyqn0")
 _edit_button = NodePath("HBoxContainer/edit_project")
 _run_button = NodePath("HBoxContainer/run_project")
 _version_label = NodePath("HBoxContainer/name_and_tags/tags/version")
+_tags_zones = NodePath("HBoxContainer/name_and_tags/tags")
 _label_name = NodePath("HBoxContainer/name_and_tags/name")
 _icon_texture = NodePath("HBoxContainer/icon")
 _remove_button = NodePath("HBoxContainer/remove_project")

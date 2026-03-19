@@ -128,19 +128,23 @@ func _ready() -> void:
 	_load_existing_projects()
 
 func _on_project_found(project_file_path: String) -> void:
-	if SaveSystem.projects_paths.has(project_file_path): return
-	
-	_create_panel(project_file_path)
+	var clean_path = project_file_path.simplify_path()
+	var project_id = str(clean_path.hash())
+	if SaveSystem.get_all_projects().has(project_id): return
 	SaveSystem.add_project(project_file_path)
+	_create_panel(project_id)
 
 func _load_existing_projects() -> void:
-	for path in SaveSystem.projects_paths:
-		_create_panel(path)
+	var all_projects = SaveSystem.get_all_projects()
+	for project_id in all_projects: _create_panel(project_id)
 
-## Spawn panel
-func _create_panel(full_path: String) -> void:
+## Spawn project panel
+func _create_panel(project_id: String) -> void:
+	var data = SaveSystem.get_project_by_id(project_id)
+	if data.is_empty(): return
+	var full_path = data[\"path\"]
 	if not FileAccess.file_exists(full_path):
-		printerr(\"Проект не найден по пути: \", full_path)
+		printerr(\"Project not found: \", full_path)
 		return
 	
 	var config = ConfigFile.new()
@@ -157,7 +161,11 @@ func _create_panel(full_path: String) -> void:
 	panel.set_text(p_name)
 	panel.set_project_path(p_dir)
 	panel.set_version(p_version)
-	panel.setup_icon()
+	panel.set_id(project_id)
+	panel.setup_tags()
+	
+	if panel.has_method(\"setup_project_data\"): panel.setup_project_data(project_id, data)
+	else: panel.setup_icon()
 
 func _extract_version(config: ConfigFile) -> String:
 	if config.has_section_key(\"application\", \"config/features\"):

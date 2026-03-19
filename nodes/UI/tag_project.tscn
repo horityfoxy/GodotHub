@@ -10,6 +10,8 @@ signal tag_created
 
 var _tag_text : String = \"\"
 var _strikethrough_text = \"\"
+var _project_id : String = \"\"
+var _color_tag : Color
 
 @export var _make_tag_window : PackedScene
 @export var _spawn_make_window_point : Control
@@ -21,8 +23,12 @@ func _ready() -> void:
 	set_tag_text(\" ... \")
 	spawn()
 
+func set_project_id(value : String):
+	_project_id = value
+
 func set_color(value : Color):
-	_background.set_color(value)
+	_color_tag = value
+	_background.set_color(_color_tag)
 
 func set_tag_text(value : String):
 	_tag_text = \" \" + value + \" \"
@@ -50,10 +56,15 @@ func spawn():
 	
 	_spawn_make_window_point.add_child(_make_tag_window_node)
 
+func off_settings_window():
+	_spawn_make_window_point.get_child(0).queue_free()
+
 func _remove_tag():
 	queue_free()
 
 func _make_tag():
+	SaveSystem.add_tag(_project_id, _tag_text, _color_tag)
+	print(_project_id, \" \", _tag_text, \" \", _color_tag)
 	tag_created.emit()
 "
 
