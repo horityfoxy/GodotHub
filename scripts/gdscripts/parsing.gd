@@ -3,6 +3,8 @@ extends VBoxContainer
 signal new_version_found
 signal network_connection_error
 
+@export var check_godot_4: CheckBox
+@export var check_godot_3: CheckBox
 @export var panel_scene: PackedScene = preload("res://nodes/UI/engine_version_parsing_panel.tscn")
 @onready var http_request: HTTPRequest = $HTTPRequest
 
@@ -17,7 +19,7 @@ func _ready() -> void:
 func ping_test() -> bool:
 	var ping_req = HTTPRequest.new()
 	add_child(ping_req)
-	ping_req.timeout = 3.0 
+	ping_req.timeout = 3.0
 	var error = ping_req.request("https://api.github.com", ["User-Agent: GodotHub-Client"], HTTPClient.METHOD_HEAD)
 	if error != OK:
 		ping_req.queue_free()
@@ -51,19 +53,22 @@ func _on_request_completed(result: int, response_code: int, _headers: PackedStri
 	update_ui()
 
 func update_ui() -> void:
+	var filter_4 = check_godot_4.button_pressed
+	var filter_3 = check_godot_3.button_pressed
+	var show_all = (filter_4 == filter_3)
 	var active_downloads: Array[String] = []
-	
 	for child in get_children():
-		if child is Panel:
-			if "is_downloading" in child and child.is_downloading:
-				var pure_version = child._version_text_label.replace("Godot engine ", "").strip_edges()
-				active_downloads.append(pure_version)
-				continue
-			child.queue_free()
-	var current_os = OS.get_name()
-	match current_os:
-		"Windows": _display_releases(windows_releases, active_downloads)
-		"Linux", "FreeBSD": _display_releases(linux_releases, active_downloads)
+		if child is Panel: child.queue_free()
+	var filtered_list: Array = []
+	var source_list = windows_releases if OS.get_name() == "Windows" else linux_releases
+	for item in source_list:
+		var version_str = item["version"]
+		var is_v4 = version_str.begins_with("v4") or version_str.begins_with("4")
+		var is_v3 = version_str.begins_with("v3") or version_str.begins_with("3")
+		if show_all: filtered_list.append(item)
+		elif filter_4 and is_v4: filtered_list.append(item)
+		elif filter_3 and is_v3: filtered_list.append(item)
+	_display_releases(filtered_list, active_downloads)
 
 func _process_release_assets(release_data: Dictionary) -> void:
 	var assets = release_data.get("assets", [])
@@ -83,6 +88,8 @@ func _display_releases(data_list: Array, active_downloads: Array = []) -> void:
 		if pure_version in active_downloads: continue
 		var instance = panel_scene.instantiate()
 		add_child(instance)
+		var target_index = max(0, get_child_count() - 2)
+		move_child(instance, target_index)
 		if instance.has_method("set_version_text"): instance.set_version_text("Godot engine " + pure_version)
 		if instance.has_method("set_link"): instance.set_link(item["url"])
 		new_version_found.emit()

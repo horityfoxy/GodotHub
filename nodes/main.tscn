@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://bn5m56kyvj02p"]
 
-[ext_resource type="Theme" uid="uid://djhof4wp4fwjb" path="res://src/themes/global.tres" id="1_01b7x"]
+[ext_resource type="Theme" uid="uid://djhof4wp4fwjb" path="res://src/themes/horityfox/global.tres" id="1_01b7x"]
 [ext_resource type="Texture2D" uid="uid://dtwh3afljtusf" path="res://src/sprites/settings/settings_logo.svg" id="1_xpfdc"]
 [ext_resource type="Theme" uid="uid://dv8k7ypaqymx5" path="res://src/themes/horityfox/buttons/header/header_button.tres" id="2_c3m70"]
 [ext_resource type="Texture2D" uid="uid://bo2oikx4dyrx8" path="res://src/sprites/pen/pen_symbol.svg" id="3_c3m70"]
@@ -14,6 +14,8 @@
 [ext_resource type="Script" uid="uid://b3y1cfpuvbhgw" path="res://scripts/buttons/button_view_window.gd" id="15_c3m70"]
 [ext_resource type="StyleBox" uid="uid://bmscpcswrl7cn" path="res://src/themes/horityfox/panels/view_window.tres" id="15_heg84"]
 [ext_resource type="FontFile" uid="uid://cev2ga8asvqgc" path="res://src/fonts/LINESeedJP/LINESeedJP-Regular.ttf" id="16_ecu0m"]
+[ext_resource type="Theme" uid="uid://c3h7ju0ypldpu" path="res://src/themes/horityfox/checkbox/header_checkbox.tres" id="16_gmty7"]
+[ext_resource type="StyleBox" uid="uid://xirpotjiy3vl" path="res://src/themes/horityfox/panels/container_substrate.tres" id="17_d4yno"]
 [ext_resource type="Theme" uid="uid://b65ashqh3awip" path="res://src/themes/horityfox/buttons/green/green_button.tres" id="17_gmty7"]
 [ext_resource type="Script" uid="uid://bw7qn0vwn16d3" path="res://scripts/gdscripts/parsing.gd" id="17_t4bcl"]
 
@@ -792,8 +794,10 @@ func _ready() -> void:
 	allow_internet_button.pressed.connect(allow_internet)
 
 func enable() -> void:
-	if VersionControl.is_internet_allowed(): parcing_window.enable()
-	else: web_request.enable()
+	if VersionControl.is_internet_allowed(): 
+		parcing_window.enable()
+	else: 
+		web_request.enable()
 
 func allow_internet():
 	VersionControl.set_internet_allowed(true)
@@ -816,12 +820,16 @@ script/source = "extends VBoxContainer
 
 signal _network_connection_error
 
+@export var check_godot_4: CheckBox
+@export var check_godot_3: CheckBox
 @export var _parcing_window : VBoxContainer
 @export var _parcing_hint : Label
 
 func _ready() -> void:
 	_parcing_window.network_connection_error.connect(_network_connection_error.emit)
 	_parcing_window.new_version_found.connect(_hide_hint)
+	check_godot_4.toggled.connect(_on_filter_changed)
+	check_godot_3.toggled.connect(_on_filter_changed)
 	_parcing_hint.hide()
 
 func disable():
@@ -830,11 +838,15 @@ func disable():
 func enable() -> void:
 	show()
 	_parcing_hint.show()
+	_parcing_window.hide()
 	_parcing_window.fetch_godot_releases()
 
 func _hide_hint():
 	_parcing_window.show()
 	_parcing_hint.hide()
+
+func _on_filter_changed(_toggled: bool) -> void:
+	_parcing_window.update_ui()
 "
 
 [sub_resource type="GDScript" id="GDScript_ibm61"]
@@ -1649,6 +1661,7 @@ parcing_window = NodePath("parcing")
 allow_internet_button = NodePath("privacy_window/Button")
 
 [node name="privacy_window" type="Control" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel" unique_id=1724254437]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -1696,8 +1709,7 @@ theme = ExtResource("8_c3m70")
 theme_override_font_sizes/font_size = 14
 text = "Разрешить"
 
-[node name="parcing" type="VBoxContainer" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel" unique_id=974929392 node_paths=PackedStringArray("_parcing_window", "_parcing_hint")]
-visible = false
+[node name="parcing" type="VBoxContainer" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel" unique_id=974929392 node_paths=PackedStringArray("check_godot_4", "check_godot_3", "_parcing_window", "_parcing_hint")]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -1705,11 +1717,13 @@ anchor_bottom = 1.0
 offset_left = 8.0
 offset_top = 1.0
 offset_right = -8.0
-offset_bottom = -1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/separation = 0
 script = SubResource("GDScript_imhw3")
-_parcing_window = NodePath("ScrollContainer/VBoxContainer")
+check_godot_4 = NodePath("filters/HBoxContainer/godot_4")
+check_godot_3 = NodePath("filters/HBoxContainer/godot_3")
+_parcing_window = NodePath("Panel/ScrollContainer/VBoxContainer")
 _parcing_hint = NodePath("../Label")
 
 [node name="filters" type="Control" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel/parcing" unique_id=812555803]
@@ -1725,26 +1739,50 @@ grow_horizontal = 2
 grow_vertical = 2
 alignment = 1
 
-[node name="CheckBox" type="CheckBox" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel/parcing/filters/HBoxContainer" unique_id=1113549055]
+[node name="godot_4" type="CheckBox" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel/parcing/filters/HBoxContainer" unique_id=1666293915]
 layout_mode = 2
-disabled = true
-text = "Godot 3x"
-
-[node name="CheckBox2" type="CheckBox" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel/parcing/filters/HBoxContainer" unique_id=1666293915]
-layout_mode = 2
-disabled = true
+theme = ExtResource("16_gmty7")
 text = "Godot 4x"
 
-[node name="ScrollContainer" type="ScrollContainer" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel/parcing" unique_id=802356968]
+[node name="godot_3" type="CheckBox" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel/parcing/filters/HBoxContainer" unique_id=1113549055]
+layout_mode = 2
+theme = ExtResource("16_gmty7")
+text = "Godot 3x"
+
+[node name="Panel" type="Panel" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel/parcing" unique_id=1444593476]
 layout_mode = 2
 size_flags_vertical = 3
+theme_override_styles/panel = ExtResource("17_d4yno")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel/parcing/ScrollContainer" unique_id=1632576858]
+[node name="ScrollContainer" type="ScrollContainer" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel/parcing/Panel" unique_id=802356968]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 1.0
+offset_right = -8.0
+offset_bottom = -1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_vertical = 3
+follow_focus = true
+
+[node name="VBoxContainer" type="VBoxContainer" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel/parcing/Panel/ScrollContainer" unique_id=1632576858 node_paths=PackedStringArray("check_godot_4", "check_godot_3")]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_constants/separation = 8
 script = ExtResource("17_t4bcl")
+check_godot_4 = NodePath("../../../filters/HBoxContainer/godot_4")
+check_godot_3 = NodePath("../../../filters/HBoxContainer/godot_3")
 
-[node name="HTTPRequest" type="HTTPRequest" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel/parcing/ScrollContainer/VBoxContainer" unique_id=790924583]
+[node name="HTTPRequest" type="HTTPRequest" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel/parcing/Panel/ScrollContainer/VBoxContainer" unique_id=790924583]
+
+[node name="spacer_1" type="Control" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel/parcing/Panel/ScrollContainer/VBoxContainer" unique_id=1158426318]
+layout_mode = 2
+
+[node name="spacer_2" type="Control" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel/parcing/Panel/ScrollContainer/VBoxContainer" unique_id=448872784]
+layout_mode = 2
 
 [node name="Label" type="Label" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel" unique_id=304435458]
 visible = false

@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://cgxocv277cv8p"]
 
-[ext_resource type="StyleBox" uid="uid://08qpf6v4ihhn" path="res://src/themes/horityfox/panels/project_panels.tres" id="1_vg8ly"]
+[ext_resource type="StyleBox" uid="uid://1pka6kavqbsg" path="res://src/themes/horityfox/panels/engine_parcing_version_panel.tres" id="1_vg8ly"]
 [ext_resource type="Texture2D" uid="uid://bx40bofn7yy27" path="res://icon.svg" id="2_pttj3"]
 [ext_resource type="Theme" uid="uid://c06aoxshvcfhh" path="res://src/themes/horityfox/buttons/blue/blue_button.tres" id="3_1ubim"]
 
