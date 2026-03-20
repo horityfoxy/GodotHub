@@ -18,7 +18,6 @@ func add_project(path: String) -> void:
 			"tags": []
 		}
 		save_projects()
-		print("Проект добавлен: ", project_id)
 
 func remove_project(project_id: String) -> void:
 	if _projects_data.erase(project_id):
@@ -49,7 +48,7 @@ func set_project_icon(project_id: String, icon_path: String) -> void:
 ## Add tag
 func add_tag(project_id: String, tag_name: String, color_hex: Color = Color("0e55c2")) -> void:
 	if not _projects_data.has(project_id):
-		printerr("Ошибка: Проект с ID ", project_id, " не найден.")
+		printerr("Error: project with ID: ", project_id, " not found.")
 		return
 	var new_tag = {
 		"name": tag_name, 

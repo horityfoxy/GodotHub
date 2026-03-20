@@ -20,15 +20,47 @@ script/source = "extends panel_base
 
 var _project_path : String = \"\"
 var _godot_path : String = \"\"
-var _version : String = \"\"
+var _version : String = \"\" 
 var _project_id : String = \"\"
 
 func _ready() -> void:
 	if _edit_button: _edit_button.pressed.connect(_edit_project)
 	if _run_button: _run_button.pressed.connect(_run_project)
 	EventBus.edit_button_pressed.connect(_edit_mode_enable)
+	EventBus.version_update.connect(_update_godot_path)
+	
 	_tags_zones._set_id(_get_id())
 	super()
+
+func set_version(value : String) -> void:
+	_version = value
+	if _version_label: _version_label.text = \" \" + value + \" \"
+	_update_godot_path()
+
+func _update_godot_path() -> void:
+	if _version.is_empty(): return
+	var installed_versions = VersionControl.get_sorted_versions()
+	for v in installed_versions:
+		if v == _version or v.begins_with(_version + \".\"):
+			_godot_path = VersionControl.get_godot_path(v)
+			return
+	_godot_path = \"\"
+
+func _edit_project(): launch_project_in_editor([\"--path\", _project_path, \"-e\"])
+
+func _run_project(): launch_project_in_editor([\"--path\", _project_path])
+
+func launch_project_in_editor(_args : PackedStringArray) -> void:
+	_update_godot_path()
+	if _godot_path.is_empty() or not FileAccess.file_exists(_godot_path):
+		printerr(\"ERROR: Godot version '\", _version, \"' not found or path is invalid: \", _godot_path)
+		return
+	if _project_path == \"\":
+		printerr(\"ERROR: Project path is empty!\")
+		return
+	var pid: int = OS.create_process(_godot_path, _args)
+	if pid > 0: if _args.has(\"-e\"): get_tree().quit()
+	else: printerr(\"ERROR: Failed to launch the project.\")
 
 func setup_tags():
 	_tags_zones._set_id(_get_id())
@@ -37,41 +69,16 @@ func setup_tags():
 func set_id(value : String): _project_id = value
 
 func _edit_mode_enable() -> void:
-	if _remove_button.visible: _remove_button.visible = false
-	else: _remove_button.visible = true
-
-func set_godot_path(value : String) -> void: _godot_path = value
+	_remove_button.visible = !_remove_button.visible
 
 func set_project_path(value : String) -> void: _project_path = value
 
 func setup_icon():
 	_icon_texture.setup()
 
-func set_version(value : String) -> void:
-	_version = value
-	_version_label.text = \" \" + value + \" \"
-
 func remove() -> void:
 	SaveSystem.remove_project(_project_id)
 	super()
-
-func _edit_project(): launch_project_in_editor([\"--path\", _project_path, \"-e\"])
-
-func _run_project(): launch_project_in_editor([\"--path\", _project_path])
-
-func launch_project_in_editor(_args : PackedStringArray) -> void:
-	if not FileAccess.file_exists(_godot_path):
-		printerr(\"ERROR: Executable file not found: \", _godot_path)
-		return
-	
-	if _project_path == \"\":
-		printerr(\"ERROR: Project path is empty!\")
-		return
-	
-	var pid: int = OS.create_process(_godot_path, _args)
-	if pid > 0: 
-		if _args.has(\"-e\"): get_tree().quit()
-	else: printerr(\"ERROR: Failed to launch the project.\")
 
 func _get_id() -> String: return _project_id
 "

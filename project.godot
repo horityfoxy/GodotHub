@@ -19,6 +19,7 @@ config/icon="uid://e7wkwvbepdoa"
 
 EventBus="*uid://bfy15g55lxyhg"
 SaveSystem="*uid://bmr7acyerr6rd"
+VersionControl="*uid://cq42arp623ny3"
 
 [display]
 

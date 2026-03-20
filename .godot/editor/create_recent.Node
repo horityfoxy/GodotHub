@@ -1,4 +1,7 @@
 TextureRect
+Label
+ProgressBar
+HTTPRequest
 Button
 HBoxContainer
 ColorRect
@@ -7,8 +10,5 @@ VBoxContainer
 Panel
 Control
 RichTextLabel
-Label
 CheckBox
 ScrollContainer
-AnimationPlayer
-Node

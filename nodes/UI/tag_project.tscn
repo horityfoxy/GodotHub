@@ -51,13 +51,11 @@ func _remove_mouse_entered():
 	if _edit_mode == false: return
 	text = _strikethrough_text
 	_background.set_color(_color_remove)
-	print(_strikethrough_text)
 
 func _remove_mouse_exited():
 	if _edit_mode == false: return
 	text = _tag_text
 	_background.set_color(_color_tag)
-	print(text)
 
 func spawn():
 	var window = _make_tag_window.instantiate()
@@ -83,7 +81,6 @@ func _remove_tag():
 func _make_tag():
 	var clean_name = _tag_text.strip_edges()
 	SaveSystem.add_tag(_project_id, clean_name, _color_tag)
-	print(_project_id, \" \", _tag_text, \" \", _color_tag)
 	tag_created.emit()
 "
 
@@ -104,7 +101,7 @@ func _ready() -> void:
 func set_color(value: Color):
 	if not _unique_style: return
 	_unique_style.bg_color = value
-	var border_color = value.lightened(0.3)
+	var border_color = value.lightened(0.2)
 	_unique_style.border_color = border_color
 "
 
