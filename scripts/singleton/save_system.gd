@@ -21,6 +21,7 @@ func add_project(path: String) -> void:
 
 func remove_project(project_id: String) -> void:
 	if _projects_data.erase(project_id):
+		EventBus.project_removed.emit()
 		save_projects()
 
 # --- getters ---

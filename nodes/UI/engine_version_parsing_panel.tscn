@@ -13,6 +13,8 @@ const ENGINE_FOLDER : String = \"user://engines/\"
 var _link : String = \"\"
 var _version_text_label : String = \"\" 
 
+var is_downloading : bool = false
+
 @export var _download_button : Button
 @export var _version_text : Label
 
@@ -22,21 +24,25 @@ func _ready() -> void:
 
 func set_link(value : String) -> void: _link = value
 
-func set_version_text(value : String) -> void:
+func set_version_text(value: String) -> void:
 	_version_text_label = value
-	if _version_text: _version_text.text = _version_text_label
+	if _version_text: 
+		_version_text.text = _version_text_label
+	var pure_version = _version_text_label.replace(\"Godot engine \", \"\").strip_edges()
+	var saved_path = VersionControl.get_godot_path(pure_version)
+	if not saved_path.is_empty() and FileAccess.file_exists(saved_path):
+		if _download_button: _download_button.text = \"Переустановить\"
+	else:
+		if _download_button: _download_button.text = \"Загрузить\"
 
 func _download() -> void:
 	if _link.is_empty(): return
-	
-	if not DirAccess.dir_exists_absolute(ENGINE_FOLDER):
-		DirAccess.make_dir_recursive_absolute(ENGINE_FOLDER)
-	
+	if not DirAccess.dir_exists_absolute(ENGINE_FOLDER): DirAccess.make_dir_recursive_absolute(ENGINE_FOLDER)
+	is_downloading = true
 	var file_name = _link.get_file()
 	var zip_save_path = ENGINE_FOLDER + file_name
 	var http_node = HTTPRequest.new()
 	add_child(http_node)
-	
 	http_node.download_file = zip_save_path
 	http_node.request_completed.connect(_on_download_completed.bind(http_node, zip_save_path))
 	_download_button.disabled = true
@@ -49,6 +55,7 @@ func _on_download_completed(result: int, response_code: int, _headers: PackedStr
 		_download_button.text = \"Распаковка...\"
 		_unzip_and_cleanup(zip_path)
 	else:
+		is_downloading = false
 		_download_button.disabled = false
 		_download_button.text = \"Ошибка\"
 
@@ -87,7 +94,7 @@ func _unzip_and_cleanup(zip_path: String) -> void:
 		VersionControl.set_godot_path(pure_version, exe_path)
 	EventBus.version_update.emit()
 	_download_button.disabled = false
-	_download_button.text = \"Готово\"
+	_download_button.text = \"Переустановить\"
 
 func _is_executable(file_name: String) -> bool:
 	var lower_name = file_name.to_lower()

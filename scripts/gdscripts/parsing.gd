@@ -51,13 +51,19 @@ func _on_request_completed(result: int, response_code: int, _headers: PackedStri
 	update_ui()
 
 func update_ui() -> void:
-	for child in get_children():
-		if child is Panel: child.queue_free()
+	var active_downloads: Array[String] = []
 	
+	for child in get_children():
+		if child is Panel:
+			if "is_downloading" in child and child.is_downloading:
+				var pure_version = child._version_text_label.replace("Godot engine ", "").strip_edges()
+				active_downloads.append(pure_version)
+				continue
+			child.queue_free()
 	var current_os = OS.get_name()
 	match current_os:
-		"Windows": _display_releases(windows_releases)
-		"Linux", "FreeBSD": _display_releases(linux_releases)
+		"Windows": _display_releases(windows_releases, active_downloads)
+		"Linux", "FreeBSD": _display_releases(linux_releases, active_downloads)
 
 func _process_release_assets(release_data: Dictionary) -> void:
 	var assets = release_data.get("assets", [])
@@ -71,13 +77,10 @@ func _process_release_assets(release_data: Dictionary) -> void:
 		elif file_name.match("Godot_v*-stable_linux.x86_64.zip"):
 			linux_releases.append({"version": version_tag, "url": url})
 
-func _display_releases(data_list: Array) -> void:
+func _display_releases(data_list: Array, active_downloads: Array = []) -> void:
 	for item in data_list:
 		var pure_version = item["version"].replace("v", "").replace("-stable", "").replace("stable", "").strip_edges()
-		
-		var saved_path = VersionControl.get_godot_path(pure_version)
-		if not saved_path.is_empty() and FileAccess.file_exists(saved_path): continue
-		
+		if pure_version in active_downloads: continue
 		var instance = panel_scene.instantiate()
 		add_child(instance)
 		if instance.has_method("set_version_text"): instance.set_version_text("Godot engine " + pure_version)

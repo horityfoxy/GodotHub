@@ -7,7 +7,6 @@
 [ext_resource type="Shader" uid="uid://buyvb3en62nqv" path="res://scripts/shaders/blur_background.gdshader" id="3_k8dvw"]
 [ext_resource type="Texture2D" uid="uid://e7wkwvbepdoa" path="res://src/sprites/drag_and_drop/drag_and_drop_icon.svg" id="3_ufc4x"]
 [ext_resource type="StyleBox" uid="uid://bm2eusnrvc8qe" path="res://src/themes/horityfox/panels/window_drag_and_drop.tres" id="4_y2wr3"]
-[ext_resource type="PackedScene" uid="uid://bly605cjfk4h6" path="res://nodes/UI/godot_version_panel.tscn" id="6_ecu0m"]
 [ext_resource type="Theme" uid="uid://c06aoxshvcfhh" path="res://src/themes/horityfox/buttons/blue/blue_button.tres" id="8_c3m70"]
 [ext_resource type="Theme" uid="uid://bme18nb43kckb" path="res://src/themes/horityfox/buttons/gray/gray_button.tres" id="8_t4bcl"]
 [ext_resource type="FontFile" uid="uid://crxptqsk1pq64" path="res://src/fonts/LINESeedJP/LINESeedJP-Bold.ttf" id="10_h0f1k"]
@@ -114,13 +113,20 @@ func _ready() -> void:
 	_hint.show()
 	_project_list.hide()
 	add_project_button.pressed.connect(EventBus.drag_and_drop_window_enable.emit)
-	EventBus.existing_projects_found.connect(_hide_hint)
 	EventBus.project_found.connect(_hide_hint)
+	EventBus.project_removed.connect(_is_hint_avaible)
 
 @warning_ignore(\"unused_parameter\")
 func _hide_hint(value: String = \"\"):
 	_hint.hide()
 	_project_list.show()
+
+func _hint_enable():
+	_hint.show()
+	_project_list.hide()
+
+func _is_hint_avaible():
+	if _project_list.get_child_count() == 1: _hint_enable()
 "
 
 [sub_resource type="GDScript" id="GDScript_2toya"]
@@ -189,8 +195,21 @@ script/source = "extends Control
 @export_category(\"Buttons\")
 @export var add_godot_engine_button : Button
 
+@export var _hint : Label
+@export var _godot_versions : VBoxContainer
+
 func _ready() -> void:
+	_hint_refresh()
 	add_godot_engine_button.pressed.connect(EventBus.godot_engine_download_window_enable.emit)
+	EventBus.godot_installed_version_changed.connect(_hint_refresh)
+
+func _hint_refresh() -> void:
+	if VersionControl.get_all_versions().is_empty(): 
+		_hint.show()
+		_godot_versions.hide()
+	else:
+		_hint.hide()
+		_godot_versions.show()
 "
 
 [sub_resource type="GDScript" id="GDScript_2ykvb"]
@@ -809,6 +828,7 @@ _projects_window = NodePath("projects")
 _versions_window = NodePath("versions")
 
 [node name="projects" type="Control" parent="layout/body" unique_id=1588472335 node_paths=PackedStringArray("add_project_button", "_hint", "_project_list")]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -872,8 +892,7 @@ grow_vertical = 0
 theme = ExtResource("8_t4bcl")
 text = "Добавить проект с диска"
 
-[node name="versions" type="Control" parent="layout/body" unique_id=1081391640 node_paths=PackedStringArray("add_godot_engine_button")]
-visible = false
+[node name="versions" type="Control" parent="layout/body" unique_id=1081391640 node_paths=PackedStringArray("add_godot_engine_button", "_hint", "_godot_versions")]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -883,6 +902,8 @@ grow_horizontal = 2
 grow_vertical = 2
 script = SubResource("GDScript_eedq5")
 add_godot_engine_button = NodePath("get_new_version")
+_hint = NodePath("hint")
+_godot_versions = NodePath("ScrollContainer/VBoxContainer")
 
 [node name="hint" type="Label" parent="layout/body/versions" unique_id=1558633693]
 layout_mode = 1
@@ -918,9 +939,6 @@ size_flags_horizontal = 3
 theme_override_constants/separation = 8
 script = SubResource("GDScript_2ykvb")
 
-[node name="version_1" parent="layout/body/versions/ScrollContainer/VBoxContainer" unique_id=241060482 instance=ExtResource("6_ecu0m")]
-layout_mode = 2
-
 [node name="get_new_version" type="Button" parent="layout/body/versions" unique_id=486015608]
 layout_mode = 1
 anchors_preset = 7
@@ -953,7 +971,6 @@ horizontal_alignment = 1
 uppercase = true
 
 [node name="popup_window" type="Control" parent="." unique_id=182114234 node_paths=PackedStringArray("_blur", "_drag_and_drop_window", "_settings_window", "_get_new_version_window")]
-visible = false
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -1390,7 +1407,6 @@ theme = ExtResource("8_t4bcl")
 text = "Да"
 
 [node name="download_godot_window" type="Control" parent="popup_window" unique_id=9572961 node_paths=PackedStringArray("panel_bridge", "_close_button")]
-visible = false
 z_index = 1
 layout_mode = 1
 anchors_preset = 15

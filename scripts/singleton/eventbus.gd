@@ -12,7 +12,7 @@ signal godot_engine_download_window_enable
 @warning_ignore("unused_signal")
 signal project_found(project_file_path: String)
 @warning_ignore("unused_signal")
-signal existing_projects_found
+signal project_removed
 
 ## BUTTON HEADER SIGNALS ##
 @warning_ignore("unused_signal")
@@ -27,3 +27,5 @@ signal tag_count_change(project_id: String)
 ## VIRSION MANAGER ##
 @warning_ignore("unused_signal")
 signal version_update
+@warning_ignore("unused_signal")
+signal godot_installed_version_changed

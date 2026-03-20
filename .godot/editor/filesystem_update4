@@ -8,4 +8,8 @@ res://src/themes/horityfox/buttons/gray/gray_button.tres
 res://src/themes/horityfox/buttons/green/green_button.tres
 res://scripts/shaders/tag_color_circle.gdshader
 res://src/themes/horityfox/line_edit/drop_down_line_edit.tres
+res://scripts/singleton/eventbus.gd
+res://scripts/singleton/save_system.gd
+res://scripts/singleton/version_control.gd
+res://nodes/UI/engine_version_parsing_panel.tscn
 res://scripts/gdscripts/parsing.gd

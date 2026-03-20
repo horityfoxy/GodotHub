@@ -12,6 +12,7 @@ func _ready() -> void: load_data()
 func set_godot_path(version_name: String, executable_path: String) -> void:
 	if not _versions_data.has(version_name): _versions_data[version_name] = {}
 	_versions_data[version_name]["path"] = executable_path
+	EventBus.godot_installed_version_changed.emit()
 	save_data()
 
 func set_internet_allowed(value: bool) -> void:
@@ -82,6 +83,7 @@ func load_data() -> void:
 		print("Error parsing: ", json.get_error_message())
 
 func remove_engine_folder(folder_name: String) -> int:
+	EventBus.godot_installed_version_changed.emit()
 	var full_path: String = "user://engines/".path_join(folder_name)
 	var dir = DirAccess.open(full_path)
 	if not dir: return ERR_CANT_OPEN 
