@@ -1,14 +1,14 @@
-TextureRect
 Label
+Control
+VBoxContainer
+TextureRect
 ProgressBar
 HTTPRequest
 Button
 HBoxContainer
 ColorRect
 LineEdit
-VBoxContainer
 Panel
-Control
 RichTextLabel
 CheckBox
 ScrollContainer

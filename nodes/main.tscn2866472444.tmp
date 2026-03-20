@@ -621,12 +621,11 @@ script/source = "extends VBoxContainer
 
 signal _network_connection_error
 
-@export var _parcing_window : VBoxContainer
+@export var _parcing_window : EngineVersionParser
 @export var _parcing_hint : Label
 
 func _ready() -> void:
 	_parcing_window.network_connection_error.connect(_network_connection_error.emit)
-	_parcing_window.new_version_found.connect(_hide_hint)
 	_parcing_hint.hide()
 
 func disable():
@@ -635,6 +634,7 @@ func disable():
 func enable() -> void:
 	show()
 	_parcing_hint.show()
+	_parcing_window.new_version_found.connect(_hide_hint)
 	_parcing_window.fetch_godot_releases()
 
 func _hide_hint():
@@ -650,11 +650,10 @@ script/source = "extends Control
 @export var _parcing_hint : Label
 
 func _ready() -> void:
+	_parcing_window.network_connection_error.connect(enable)
 	_start_parsing.pressed.connect(refresh_parsing)
-	_parcing_window._network_connection_error.connect(enable)
 
 func enable():
-	_parcing_hint.hide()
 	show()
 
 func disable():
@@ -662,6 +661,7 @@ func disable():
 
 func refresh_parsing():
 	_parcing_window.enable()
+	_parcing_hint.hide()
 	disable()
 "
 
