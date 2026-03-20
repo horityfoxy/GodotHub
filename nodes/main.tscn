@@ -28,9 +28,12 @@ script/source = "extends HBoxContainer
 
 func _ready() -> void:
 	_settings_button.pressed.connect(EventBus.settings_window_enable.emit)
-	_edit_button.pressed.connect(EventBus.edit_button_pressed.emit)
+	_edit_button.pressed.connect(_edit_mode)
 	_projects_button.pressed.connect(_projects_enable)
 	_varsions_button.pressed.connect(_versions_enable)
+
+func _edit_mode():
+	EventBus.edit_button_pressed.emit()
 
 func _projects_enable():
 	EventBus.switch_window_body.emit(\"projects\")
@@ -477,9 +480,11 @@ script/source = "extends Panel
 @export var _godot_engine_button : Button
 @export var _about_program_button : Button
 @export var _close_about_window_button : Button
+@export var _update_button : Button
 
 func _ready() -> void:
 	hide()
+	_update_button.hide()
 	_close_about_window_button.pressed.connect(_on_close_about_window_button_pressed)
 	var buttons = [
 		_godot_hub_button, 
@@ -502,10 +507,181 @@ func _on_close_about_window_button_pressed() -> void:
 	disable()
 
 func enable() -> void:
+	_connect_license_button(_godot_hub_button)
 	show()
 
 func disable() -> void:
 	hide()
+"
+
+[sub_resource type="GDScript" id="GDScript_t5vdr"]
+script/source = "extends Node
+
+const GITHUB_API_URL = \"https://api.github.com/repos/horityfoxy/GodotHub/releases/latest\"
+
+var api_request: HTTPRequest
+var download_request: HTTPRequest
+var update_zip_path = \"user://update_temp.zip\"
+var _latest_release_data: Dictionary
+
+@export var update_button: Button
+
+func _ready() -> void:
+	if update_button: update_button.hide()
+	if VersionControl.is_internet_allowed(): _start_update_process()
+	else: VersionControl.internet_allowed.connect(_start_update_process)
+
+func _start_update_process() -> void:
+	api_request = HTTPRequest.new()
+	add_child(api_request)
+	api_request.request_completed.connect(_on_api_response)
+	download_request = HTTPRequest.new()
+	add_child(download_request)
+	download_request.request_completed.connect(_on_download_completed)
+	check_for_updates()
+
+func check_for_updates() -> void:
+	if api_request.request(GITHUB_API_URL) != OK: push_error(\"GitHub API request failed.\")
+
+func _on_api_response(_result: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray) -> void:
+	if response_code == 200:
+		var json = JSON.parse_string(body.get_string_from_utf8())
+		if json and json.has(\"tag_name\"):
+			var latest_version = json[\"tag_name\"].trim_prefix(\"v\")
+			if latest_version != VersionControl.version:
+				print(\"Update found: v\", latest_version)
+				_latest_release_data = json
+				if update_button:
+					update_button.show()
+					if not update_button.pressed.is_connected(_on_update_button_pressed):
+						update_button.pressed.connect(_on_update_button_pressed)
+	else: push_error(\"API Error: \", response_code)
+
+func _on_update_button_pressed() -> void:
+	if update_button:
+		update_button.disabled = true
+		update_button.text = \"Загрузка...\"
+	_start_download(_latest_release_data)
+
+func _start_download(json_data: Dictionary) -> void:
+	if not json_data.has(\"assets\") or json_data[\"assets\"].size() == 0:
+		push_error(\"No assets in release.\")
+		return
+	var current_os = OS.get_name()
+	var target_keyword = \"Windows\" if current_os == \"Windows\" else \"Linux\"
+	var download_url = \"\"
+	for asset in json_data[\"assets\"]:
+		var asset_name = asset.get(\"name\", \"\")
+		if asset_name.contains(target_keyword):
+			download_url = asset.get(\"browser_download_url\", \"\")
+			break
+	if download_url == \"\":
+		push_error(\"Asset for \" + target_keyword + \" not found.\")
+		return
+	download_request.download_file = update_zip_path
+	download_request.request(download_url)
+
+func _on_download_completed(_result: int, response_code: int, _headers: PackedStringArray, _body: PackedByteArray) -> void:
+	if response_code == 200 or response_code == 201: _unpack_and_install()
+
+func _unpack_and_install() -> void:
+	var base_dir = OS.get_executable_path().get_base_dir()
+	var temp_extract_dir = base_dir.path_join(\"update_extracted\")
+	if DirAccess.dir_exists_absolute(temp_extract_dir):
+		OS.move_to_trash(ProjectSettings.globalize_path(temp_extract_dir))
+	DirAccess.make_dir_recursive_absolute(temp_extract_dir)
+	var reader = ZIPReader.new()
+	if reader.open(update_zip_path) != OK:
+		push_error(\"Не удалось открыть ZIP-архив.\")
+		return
+	var files = reader.get_files()
+	for file_name in files:
+		var target_path = temp_extract_dir.path_join(file_name)
+		if file_name.ends_with(\"/\"):
+			DirAccess.make_dir_recursive_absolute(target_path)
+			continue
+		var parent_dir = target_path.get_base_dir()
+		if not DirAccess.dir_exists_absolute(parent_dir):
+			DirAccess.make_dir_recursive_absolute(parent_dir)
+		var content = reader.read_file(file_name)
+		var f = FileAccess.open(target_path, FileAccess.WRITE)
+		if f:
+			f.store_buffer(content)
+			f.close()
+	reader.close()
+	if FileAccess.file_exists(update_zip_path):
+		DirAccess.remove_absolute(update_zip_path)
+	_run_updater(base_dir, temp_extract_dir)
+
+func _run_updater(base_dir: String, temp_dir: String) -> void:
+	var exe_path = OS.get_executable_path()
+	var exe_name = exe_path.get_file()
+	if OS.get_name() == \"Windows\": _create_windows_updater(base_dir, temp_dir, exe_name)
+	else: _create_linux_sh(base_dir, temp_dir, exe_name)
+	get_tree().quit()
+
+func _create_windows_updater(base_dir: String, temp_dir: String, exe_name: String) -> void:
+	var ps_path = base_dir.path_join(\"updater.ps1\")
+	var td = temp_dir.replace(\"/\", \"\\\\\")
+	var bd = base_dir.replace(\"/\", \"\\\\\")
+	var exe_full = base_dir.path_join(exe_name).replace(\"/\", \"\\\\\")
+
+	var ps_content = \"\"\"$exeName = '%s'
+$tempDir = '%s'
+$baseDir = '%s'
+$exePath = '%s'
+
+while ($true) {
+    $running = Get-Process -ErrorAction SilentlyContinue | Where-Object {
+        try { $_.MainModule.FileName -eq $exePath } catch { $false }
+    }
+    if (-not $running) { break }
+    Start-Sleep -Seconds 1
+}
+
+Start-Sleep -Seconds 1
+Copy-Item -Path \"$tempDir\\\\*\" -Destination $baseDir -Recurse -Force
+Remove-Item -Path $tempDir -Recurse -Force
+Start-Process $exePath
+Remove-Item $MyInvocation.MyCommand.Path -Force
+\"\"\" % [exe_name, td, bd, exe_full]
+
+	var f = FileAccess.open(ps_path, FileAccess.WRITE)
+	if f:
+		f.store_buffer(PackedByteArray([0xEF, 0xBB, 0xBF]))  # UTF-8 BOM
+		f.store_string(ps_content)
+		f.close()
+
+	var global_ps_path = ProjectSettings.globalize_path(ps_path)
+	OS.create_process(\"powershell.exe\", [
+		\"-ExecutionPolicy\", \"Bypass\",
+		\"-NonInteractive\",
+		\"-WindowStyle\", \"Hidden\",
+		\"-File\", global_ps_path
+	])
+
+func _create_linux_sh(base_dir: String, temp_dir: String, exe_name: String) -> void:
+	var sh_path = base_dir.path_join(\"updater.sh\")
+	var sh_content = \"\"\"#!/bin/bash
+sleep 2
+cp -rn \"%s/\"* \"%s/\"
+rm -rf \"%s\"
+chmod +x \"%s\"
+\"%s\" &
+rm -- \"$0\"
+\"\"\" % [temp_dir, base_dir, temp_dir, base_dir.path_join(exe_name), base_dir.path_join(exe_name)]
+	var f = FileAccess.open(sh_path, FileAccess.WRITE)
+	f.store_string(sh_content)
+	f.close()
+	OS.execute(\"chmod\", [\"+x\", sh_path])
+	OS.create_process(\"/bin/bash\", [sh_path])
+"
+
+[sub_resource type="GDScript" id="GDScript_bunx7"]
+script/source = "extends Label
+
+func _ready() -> void:
+	text = \"Версия: \" + VersionControl.version
 "
 
 [sub_resource type="GDScript" id="GDScript_gmty7"]
@@ -828,7 +1004,6 @@ _projects_window = NodePath("projects")
 _versions_window = NodePath("versions")
 
 [node name="projects" type="Control" parent="layout/body" unique_id=1588472335 node_paths=PackedStringArray("add_project_button", "_hint", "_project_list")]
-visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -893,6 +1068,7 @@ theme = ExtResource("8_t4bcl")
 text = "Добавить проект с диска"
 
 [node name="versions" type="Control" parent="layout/body" unique_id=1081391640 node_paths=PackedStringArray("add_godot_engine_button", "_hint", "_godot_versions")]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -971,6 +1147,7 @@ horizontal_alignment = 1
 uppercase = true
 
 [node name="popup_window" type="Control" parent="." unique_id=182114234 node_paths=PackedStringArray("_blur", "_drag_and_drop_window", "_settings_window", "_get_new_version_window")]
+visible = false
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -1162,6 +1339,7 @@ text = "Язык"
 [node name="OptionButton" type="OptionButton" parent="popup_window/settings/settings_window/VBoxContainer/VBoxContainer/language" unique_id=1569932035]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
+disabled = true
 alignment = 2
 selected = 0
 item_count = 1
@@ -1180,6 +1358,7 @@ text = "Тема"
 [node name="OptionButton" type="OptionButton" parent="popup_window/settings/settings_window/VBoxContainer/VBoxContainer/theme" unique_id=297769814]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
+disabled = true
 alignment = 2
 selected = 0
 item_count = 1
@@ -1201,7 +1380,7 @@ layout_mode = 2
 theme = ExtResource("8_t4bcl")
 text = "Закрыть"
 
-[node name="about_window" type="Panel" parent="popup_window/settings" unique_id=266747320 node_paths=PackedStringArray("_view_window", "_godot_hub_button", "_lineseedjp_button", "_godot_engine_button", "_about_program_button", "_close_about_window_button")]
+[node name="about_window" type="Panel" parent="popup_window/settings" unique_id=266747320 node_paths=PackedStringArray("_view_window", "_godot_hub_button", "_lineseedjp_button", "_godot_engine_button", "_about_program_button", "_close_about_window_button", "_update_button")]
 visible = false
 custom_minimum_size = Vector2(600, 388)
 layout_mode = 1
@@ -1222,6 +1401,11 @@ _lineseedjp_button = NodePath("HBoxContainer/VBoxContainer/LINESeedJP")
 _godot_engine_button = NodePath("HBoxContainer/VBoxContainer/Godot Engine")
 _about_program_button = NodePath("HBoxContainer/VBoxContainer/About")
 _close_about_window_button = NodePath("HBoxContainer/VBoxContainer/close")
+_update_button = NodePath("HBoxContainer/VBoxContainer/update")
+
+[node name="update_server" type="Node" parent="popup_window/settings/about_window" unique_id=1023931157 node_paths=PackedStringArray("update_button")]
+script = SubResource("GDScript_t5vdr")
+update_button = NodePath("../HBoxContainer/VBoxContainer/update")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="popup_window/settings/about_window" unique_id=281050102]
 layout_mode = 1
@@ -1284,7 +1468,8 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.37036446, 0.3703645, 0.37036446, 1)
 theme_override_fonts/font = ExtResource("16_ecu0m")
 theme_override_font_sizes/font_size = 12
-text = "Версия: 1.0"
+text = "Версия: 0.8.2"
+script = SubResource("GDScript_bunx7")
 
 [node name="update" type="Button" parent="popup_window/settings/about_window/HBoxContainer/VBoxContainer" unique_id=747757715]
 layout_mode = 2
@@ -1407,6 +1592,7 @@ theme = ExtResource("8_t4bcl")
 text = "Да"
 
 [node name="download_godot_window" type="Control" parent="popup_window" unique_id=9572961 node_paths=PackedStringArray("panel_bridge", "_close_button")]
+visible = false
 z_index = 1
 layout_mode = 1
 anchors_preset = 15
@@ -1463,7 +1649,6 @@ parcing_window = NodePath("parcing")
 allow_internet_button = NodePath("privacy_window/Button")
 
 [node name="privacy_window" type="Control" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel" unique_id=1724254437]
-visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -1542,10 +1727,12 @@ alignment = 1
 
 [node name="CheckBox" type="CheckBox" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel/parcing/filters/HBoxContainer" unique_id=1113549055]
 layout_mode = 2
+disabled = true
 text = "Godot 3x"
 
 [node name="CheckBox2" type="CheckBox" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel/parcing/filters/HBoxContainer" unique_id=1666293915]
 layout_mode = 2
+disabled = true
 text = "Godot 4x"
 
 [node name="ScrollContainer" type="ScrollContainer" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel/parcing" unique_id=802356968]
@@ -1631,6 +1818,7 @@ alignment = 1
 [node name="scan_project" type="Button" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer2" unique_id=507896509]
 layout_mode = 2
 theme = ExtResource("8_t4bcl")
+disabled = true
 text = "Найти на диске"
 
 [node name="close" type="Button" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer2" unique_id=332809183]

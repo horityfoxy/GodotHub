@@ -12,8 +12,9 @@ config_version=5
 
 config/name="Godot Hub"
 run/main_scene="uid://bn5m56kyvj02p"
+config/custom_user_dir_name="GodotHub"
 config/features=PackedStringArray("4.6", "Forward Plus")
-config/icon="uid://e7wkwvbepdoa"
+config/icon="uid://bx40bofn7yy27"
 
 [autoload]
 

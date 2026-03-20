@@ -1,5 +1,9 @@
 extends Node
 
+@warning_ignore("unused_signal")
+signal internet_allowed
+
+const version : String = "0.8.2"
 const SAVE_PATH = "user://installed_versions.json"
 
 var _versions_data: Dictionary = {}
@@ -17,6 +21,7 @@ func set_godot_path(version_name: String, executable_path: String) -> void:
 
 func set_internet_allowed(value: bool) -> void:
 	_is_internet_allowed = value
+	internet_allowed.emit()
 	save_data()
 
 # --- getters ---
