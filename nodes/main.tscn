@@ -1,0 +1,1836 @@
+[gd_scene format=3 uid="uid://bn5m56kyvj02p"]
+
+[ext_resource type="Theme" uid="uid://djhof4wp4fwjb" path="res://src/themes/global.tres" id="1_01b7x"]
+[ext_resource type="Texture2D" uid="uid://dtwh3afljtusf" path="res://src/sprites/settings/settings_logo.svg" id="1_xpfdc"]
+[ext_resource type="Theme" uid="uid://dv8k7ypaqymx5" path="res://src/themes/horityfox/buttons/header/header_button.tres" id="2_c3m70"]
+[ext_resource type="Texture2D" uid="uid://bo2oikx4dyrx8" path="res://src/sprites/pen/pen_symbol.svg" id="3_c3m70"]
+[ext_resource type="Shader" uid="uid://buyvb3en62nqv" path="res://scripts/shaders/blur_background.gdshader" id="3_k8dvw"]
+[ext_resource type="Texture2D" uid="uid://e7wkwvbepdoa" path="res://src/sprites/drag_and_drop/drag_and_drop_icon.svg" id="3_ufc4x"]
+[ext_resource type="StyleBox" uid="uid://bm2eusnrvc8qe" path="res://src/themes/horityfox/panels/window_drag_and_drop.tres" id="4_y2wr3"]
+[ext_resource type="Theme" uid="uid://c06aoxshvcfhh" path="res://src/themes/horityfox/buttons/blue/blue_button.tres" id="8_c3m70"]
+[ext_resource type="Theme" uid="uid://bme18nb43kckb" path="res://src/themes/horityfox/buttons/gray/gray_button.tres" id="8_t4bcl"]
+[ext_resource type="FontFile" uid="uid://crxptqsk1pq64" path="res://src/fonts/LINESeedJP/LINESeedJP-Bold.ttf" id="10_h0f1k"]
+[ext_resource type="Theme" uid="uid://d24t8jknpr3a4" path="res://src/themes/fonts/header.tres" id="14_01b7x"]
+[ext_resource type="Script" uid="uid://b3y1cfpuvbhgw" path="res://scripts/buttons/button_view_window.gd" id="15_c3m70"]
+[ext_resource type="StyleBox" uid="uid://bmscpcswrl7cn" path="res://src/themes/horityfox/panels/view_window.tres" id="15_heg84"]
+[ext_resource type="FontFile" uid="uid://cev2ga8asvqgc" path="res://src/fonts/LINESeedJP/LINESeedJP-Regular.ttf" id="16_ecu0m"]
+[ext_resource type="Theme" uid="uid://b65ashqh3awip" path="res://src/themes/horityfox/buttons/green/green_button.tres" id="17_gmty7"]
+[ext_resource type="Script" uid="uid://bw7qn0vwn16d3" path="res://scripts/gdscripts/parsing.gd" id="17_t4bcl"]
+
+[sub_resource type="GDScript" id="GDScript_usfbk"]
+script/source = "extends HBoxContainer
+
+@export_category(\"Buttons\")
+@export var _settings_button : Button
+@export var _edit_button : Button
+@export var _projects_button : Button
+@export var _varsions_button : Button
+
+func _ready() -> void:
+	_settings_button.pressed.connect(EventBus.settings_window_enable.emit)
+	_edit_button.pressed.connect(_edit_mode)
+	_projects_button.pressed.connect(_projects_enable)
+	_varsions_button.pressed.connect(_versions_enable)
+
+func _edit_mode():
+	EventBus.edit_button_pressed.emit()
+
+func _projects_enable():
+	EventBus.switch_window_body.emit(\"projects\")
+	_projects_button.button_pressed = true
+	_varsions_button.button_pressed = false
+
+func _versions_enable():
+	EventBus.switch_window_body.emit(\"versions\")
+	_varsions_button.button_pressed = true
+	_projects_button.button_pressed = false
+"
+
+[sub_resource type="GDScript" id="GDScript_u2n8d"]
+script/source = "extends Control
+
+@export var _projects_window : Control
+@export var _versions_window : Control
+
+enum WindowState { PROJECTS, VERSIONS }
+var _current_state : WindowState = WindowState.PROJECTS
+
+var _tween : Tween
+
+func _ready() -> void:
+	var screen_width = get_viewport_rect().size.x
+	EventBus.switch_window_body.connect(switch_window_body)
+	_projects_window.position.x = 0
+	_versions_window.position.x = screen_width
+	_projects_window.show()
+	_versions_window.hide()
+
+func switch_window_body(state_name : String) -> void:
+	var new_state : WindowState
+	match state_name:
+		\"projects\": new_state = WindowState.PROJECTS
+		\"versions\": new_state = WindowState.VERSIONS
+		_: 
+			printerr(\"Incorrect header button value: \", state_name)
+			return
+	
+	if new_state == _current_state: return
+	_animate_swipe(new_state)
+	_current_state = new_state
+
+func _animate_swipe(target_state: WindowState) -> void:
+	if _tween and _tween.is_running(): _tween.kill()
+	
+	_tween = create_tween().set_parallel(true)
+	_tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	
+	var screen_width = get_viewport_rect().size.x
+	var duration = 0.55
+	
+	match target_state:
+		WindowState.VERSIONS:
+			_versions_window.show()
+			_tween.tween_property(_projects_window, \"position:x\", -screen_width, duration)
+			_tween.tween_property(_versions_window, \"position:x\", 0, duration)
+		WindowState.PROJECTS:
+			_projects_window.show()
+			_tween.tween_property(_versions_window, \"position:x\", screen_width, duration)
+			_tween.tween_property(_projects_window, \"position:x\", 0, duration)
+	
+	_tween.finished.connect(func():
+		_projects_window.visible = (target_state == WindowState.PROJECTS)
+		_versions_window.visible = (target_state == WindowState.VERSIONS)
+	) 
+"
+
+[sub_resource type="GDScript" id="GDScript_1n1q0"]
+script/source = "extends Control
+
+@export_category(\"Buttons\")
+@export var add_project_button : Button
+
+@export var _hint : Label
+@export var _project_list : VBoxContainer
+
+func _ready() -> void:
+	_hint.show()
+	_project_list.hide()
+	add_project_button.pressed.connect(EventBus.drag_and_drop_window_enable.emit)
+	EventBus.project_found.connect(_hide_hint)
+	EventBus.project_removed.connect(_is_hint_avaible)
+
+@warning_ignore(\"unused_parameter\")
+func _hide_hint(value: String = \"\"):
+	_hint.hide()
+	_project_list.show()
+
+func _hint_enable():
+	_hint.show()
+	_project_list.hide()
+
+func _is_hint_avaible():
+	if _project_list.get_child_count() == 1: _hint_enable()
+"
+
+[sub_resource type="GDScript" id="GDScript_2toya"]
+script/source = "extends VBoxContainer
+
+@export var project_panel_scene : PackedScene = preload(\"res://nodes/UI/project_panel.tscn\")
+@export var path_system_node : Node 
+
+func _ready() -> void:
+	EventBus.project_found.connect(_on_project_found)
+	_load_existing_projects()
+
+func _on_project_found(project_file_path: String) -> void:
+	var clean_path = project_file_path.simplify_path()
+	var project_id = str(clean_path.hash())
+	if SaveSystem.get_all_projects().has(project_id): return
+	SaveSystem.add_project(project_file_path)
+	_create_panel(project_id)
+
+func _load_existing_projects() -> void:
+	var all_projects = SaveSystem.get_all_projects()
+	for project_id in all_projects: _create_panel(project_id)
+
+## Spawn project panel
+func _create_panel(project_id: String) -> void:
+	var data = SaveSystem.get_project_by_id(project_id)
+	if data.is_empty(): return
+	var full_path = data[\"path\"]
+	if not FileAccess.file_exists(full_path):
+		printerr(\"Project not found: \", full_path)
+		return
+	
+	var config = ConfigFile.new()
+	var err = config.load(full_path)
+	if err != OK: return
+	
+	var p_name = config.get_value(\"application\", \"config/name\", \"Unnamed Project\")
+	var p_dir = full_path.get_base_dir()
+	var p_version = _extract_version(config)
+	
+	var panel = project_panel_scene.instantiate()
+	add_child(panel)
+	
+	panel.set_text(p_name)
+	panel.set_project_path(p_dir)
+	panel.set_version(p_version)
+	panel.set_id(project_id)
+	panel.setup_tags()
+	
+	if panel.has_method(\"setup_project_data\"): panel.setup_project_data(project_id, data)
+	else: panel.setup_icon()
+	EventBus.project_found.emit.call_deferred()
+
+func _extract_version(config: ConfigFile) -> String:
+	if config.has_section_key(\"application\", \"config/features\"):
+		var features = config.get_value(\"application\", \"config/features\")
+		for feature in features:
+			if feature.is_valid_float() or (feature.length() > 0 and feature[0].is_numeric()):
+				return feature
+	return \"Unknown\"
+"
+
+[sub_resource type="GDScript" id="GDScript_eedq5"]
+script/source = "extends Control
+
+@export_category(\"Buttons\")
+@export var add_godot_engine_button : Button
+
+@export var _hint : Label
+@export var _godot_versions : VBoxContainer
+
+func _ready() -> void:
+	_hint_refresh()
+	add_godot_engine_button.pressed.connect(EventBus.godot_engine_download_window_enable.emit)
+	EventBus.godot_installed_version_changed.connect(_hint_refresh)
+
+func _hint_refresh() -> void:
+	if VersionControl.get_all_versions().is_empty(): 
+		_hint.show()
+		_godot_versions.hide()
+	else:
+		_hint.hide()
+		_godot_versions.show()
+"
+
+[sub_resource type="GDScript" id="GDScript_2ykvb"]
+script/source = "# InstalledVersionsManager.gd
+extends VBoxContainer
+
+@export var panel_scene: PackedScene = preload(\"res://nodes/UI/godot_version_panel.tscn\")
+
+func _ready() -> void:
+	if EventBus.has_signal(\"version_update\"):
+		EventBus.version_update.connect(refresh_list)
+	refresh_list()
+
+func refresh_list() -> void:
+	for child in get_children(): child.queue_free()
+	var versions = VersionControl.get_all_versions()
+	for v_name in versions: _create_panel(v_name)
+
+func _create_panel(version_name: String) -> void:
+	var instance = panel_scene.instantiate()
+	add_child(instance)
+	instance.set_text(\"Godot engine \" + version_name)
+	if instance.has_method(\"set_version_id\"):
+		instance.set_version_id(version_name)
+"
+
+[sub_resource type="GDScript" id="GDScript_d4yno"]
+script/source = "extends Control
+
+@export_category(\"Blur\")
+@export var _blur : ColorRect
+
+@export_category(\"Windows\")
+@export var _drag_and_drop_window : Control
+@export var _settings_window : Control
+@export var _get_new_version_window : Control
+
+func _ready() -> void:
+	hide()
+	_settings_window.close_window.connect(disable)
+	_drag_and_drop_window.close_window.connect(disable)
+	_get_new_version_window.close_window.connect(disable)
+	EventBus.settings_window_enable.connect(enable_settings)
+	EventBus.drag_and_drop_window_enable.connect(enable_drag_and_drop)
+	EventBus.godot_engine_download_window_enable.connect(enable_get_engine_version)
+
+func enable_get_engine_version() -> void:
+	enable()
+	_get_new_version_window.enable()
+
+func enable_settings() -> void:
+	enable()
+	_settings_window.enable()
+
+func enable_drag_and_drop() -> void:
+	enable()
+	_drag_and_drop_window.enable()
+
+func enable_blur() -> void:
+	_blur.enable()
+
+func disable_windows() -> void:
+	_drag_and_drop_window.disable()
+	_settings_window.disable()
+
+func disable_blur() -> void:
+	_blur.disable()
+
+func disable_all() -> void:
+	disable_windows()
+	disable_blur()
+
+func enable() -> void:
+	show()
+
+func disable() -> void:
+	hide()
+"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_y2wr3"]
+shader = ExtResource("3_k8dvw")
+shader_parameter/blur_amount = 1.50000007125
+
+[sub_resource type="GDScript" id="GDScript_cmhxe"]
+script/source = "extends ColorRect
+
+func enable() -> void:
+	show()
+
+func disable() -> void:
+	hide()
+"
+
+[sub_resource type="GDScript" id="GDScript_1vlam"]
+script/source = "extends Control
+
+signal close_window
+
+@export_category(\"Buttons\")
+@export var _close_window_button : Button
+
+@export_category(\"Windows\")
+@export var _drag_and_drop_window : Panel
+
+func _ready() -> void:
+	hide()
+	_close_window_button.pressed.connect(disable)
+
+func enable() -> void:
+	_drag_and_drop_window.can_drop(true)
+	show()
+
+func disable() -> void:
+	_drag_and_drop_window.can_drop(false)
+	close_window.emit()
+	hide()
+"
+
+[sub_resource type="GDScript" id="GDScript_vr02l"]
+script/source = "extends Node
+
+@export_category(\"Buttons\")
+@export var _scan_projects_button : Button
+@export var _close_window_button : Button
+
+@export_category(\"Dialogs\")
+@export var _file_dialog : FileDialog
+
+func _ready() -> void:
+	_file_dialog.file_mode = FileDialog.FILE_MODE_OPEN_DIR
+	_file_dialog.access = FileDialog.ACCESS_FILESYSTEM
+	
+	_scan_projects_button.pressed.connect(_on_scan_projects_pressed)
+	_file_dialog.dir_selected.connect(_on_dir_selected)
+
+func _on_scan_projects_pressed() -> void:
+	_file_dialog.popup_centered_ratio(0.5)
+
+func _on_dir_selected(path: String) -> void:
+	_process_scan(path)
+
+func _process_scan(path: String) -> void:
+	_close_window_button.pressed.emit()
+	_scan_recursive(path)
+	print(\"Scan is completed\")
+
+func _scan_recursive(path: String) -> void:
+	var dir = DirAccess.open(path)
+	if not dir: return
+	
+	if dir.file_exists(\"project.godot\"):
+		var full_config_path = path.path_join(\"project.godot\")
+		_register_project(full_config_path)
+		return
+	
+	dir.list_dir_begin()
+	var file_name = dir.get_next()
+	
+	while file_name != \"\":
+		if dir.current_is_dir():
+			if not file_name.begins_with(\".\"): 
+				_scan_recursive(path.path_join(file_name))
+		file_name = dir.get_next()
+	dir.list_dir_end()
+
+func _register_project(full_path: String) -> void:
+	EventBus.project_found.emit(full_path)
+	print(\"Project was found in path: \", full_path)
+"
+
+[sub_resource type="GDScript" id="GDScript_g653p"]
+script/source = "extends Panel
+
+@export var drop_zone : Control
+
+func can_drop(value : bool):
+	drop_zone.can_drop(value)
+"
+
+[sub_resource type="GDScript" id="GDScript_jfcuo"]
+script/source = "extends Control
+
+@export var _path_system : Node
+
+var _is_can_drop : bool = false
+
+func _ready() -> void:
+	_is_can_drop = false
+	get_window().files_dropped.connect(_on_files_dropped)
+
+func can_drop(value : bool):
+	_is_can_drop = value
+
+func _on_files_dropped(files: PackedStringArray) -> void:
+	if _is_can_drop == false: return
+	if get_rect().has_point(get_local_mouse_position()):
+		_handle_drop_logic(files)
+
+func _handle_drop_logic(files: PackedStringArray) -> void:
+	if files.is_empty(): return
+	
+	var raw_path = files[0]
+	var clean_path = raw_path.replace(\"\\\\\", \"/\").simplify_path()
+	
+	if DirAccess.dir_exists_absolute(clean_path):
+		if _path_system and _path_system.has_method(\"_process_scan\"):
+			_path_system._process_scan(clean_path)
+			print(\"Передано на сканирование: \", clean_path)
+"
+
+[sub_resource type="GDScript" id="GDScript_c3m70"]
+script/source = "extends Control
+
+signal  close_window
+
+@export_category(\"Windows\")
+@export var _settings_window : Panel
+
+func _ready() -> void:
+	hide()
+	_settings_window.close_window.connect(disable)
+
+func enable() -> void:
+	show()
+
+func disable() -> void:
+	close_window.emit()
+	hide()
+"
+
+[sub_resource type="GDScript" id="GDScript_ecu0m"]
+script/source = "extends Panel
+
+signal close_window
+
+@export_category(\"Buttons\")
+@export var _about_button : Button
+@export var _close_settings_button : Button
+
+@export_category(\"Windows\")
+@export var _about_window : Panel
+
+func _ready() -> void:
+	show()
+	_about_button.pressed.connect(on_about_button_pressed)
+	_close_settings_button.pressed.connect(on_close_settings_button_pressed)
+
+func on_about_button_pressed() -> void:
+	_about_window.enable()
+
+func on_close_settings_button_pressed() -> void:
+	disable()
+
+func disable():
+	close_window.emit()
+"
+
+[sub_resource type="GDScript" id="GDScript_t4bcl"]
+script/source = "extends Panel
+
+@export var _view_window : Panel
+@export_category(\"buttons\")
+@export var _godot_hub_button : Button
+@export var _lineseedjp_button : Button
+@export var _godot_engine_button : Button
+@export var _about_program_button : Button
+@export var _close_about_window_button : Button
+@export var _update_button : Button
+
+func _ready() -> void:
+	hide()
+	_update_button.hide()
+	_close_about_window_button.pressed.connect(_on_close_about_window_button_pressed)
+	var buttons = [
+		_godot_hub_button, 
+		_lineseedjp_button, 
+		_godot_engine_button, 
+		_about_program_button
+	]
+	
+	for btn in buttons: _connect_license_button(btn)
+
+func _connect_license_button(btn: Button) -> void:
+	if btn:
+		btn.pressed.connect(func():
+			var id_from_button = btn.get(\"ID\")
+			if id_from_button != null:
+				_view_window.text_update(id_from_button)
+		)
+
+func _on_close_about_window_button_pressed() -> void:
+	disable()
+
+func enable() -> void:
+	_connect_license_button(_godot_hub_button)
+	show()
+
+func disable() -> void:
+	hide()
+"
+
+[sub_resource type="GDScript" id="GDScript_t5vdr"]
+script/source = "extends Node
+
+const GITHUB_API_URL = \"https://api.github.com/repos/horityfoxy/GodotHub/releases/latest\"
+
+var api_request: HTTPRequest
+var download_request: HTTPRequest
+var update_zip_path = \"user://update_temp.zip\"
+var _latest_release_data: Dictionary
+
+@export var update_button: Button
+
+func _ready() -> void:
+	if update_button: update_button.hide()
+	if VersionControl.is_internet_allowed(): _start_update_process()
+	else: VersionControl.internet_allowed.connect(_start_update_process)
+
+func _start_update_process() -> void:
+	api_request = HTTPRequest.new()
+	add_child(api_request)
+	api_request.request_completed.connect(_on_api_response)
+	download_request = HTTPRequest.new()
+	add_child(download_request)
+	download_request.request_completed.connect(_on_download_completed)
+	check_for_updates()
+
+func check_for_updates() -> void:
+	if api_request.request(GITHUB_API_URL) != OK: push_error(\"GitHub API request failed.\")
+
+func _on_api_response(_result: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray) -> void:
+	if response_code == 200:
+		var json = JSON.parse_string(body.get_string_from_utf8())
+		if json and json.has(\"tag_name\"):
+			var latest_version = json[\"tag_name\"].trim_prefix(\"v\")
+			if latest_version != VersionControl.version:
+				print(\"Update found: v\", latest_version)
+				_latest_release_data = json
+				if update_button:
+					update_button.show()
+					if not update_button.pressed.is_connected(_on_update_button_pressed):
+						update_button.pressed.connect(_on_update_button_pressed)
+	else: push_error(\"API Error: \", response_code)
+
+func _on_update_button_pressed() -> void:
+	if update_button:
+		update_button.disabled = true
+		update_button.text = \"Загрузка...\"
+	_start_download(_latest_release_data)
+
+func _start_download(json_data: Dictionary) -> void:
+	if not json_data.has(\"assets\") or json_data[\"assets\"].size() == 0:
+		push_error(\"No assets in release.\")
+		return
+	var current_os = OS.get_name()
+	var target_keyword = \"Windows\" if current_os == \"Windows\" else \"Linux\"
+	var download_url = \"\"
+	for asset in json_data[\"assets\"]:
+		var asset_name = asset.get(\"name\", \"\")
+		if asset_name.contains(target_keyword):
+			download_url = asset.get(\"browser_download_url\", \"\")
+			break
+	if download_url == \"\":
+		push_error(\"Asset for \" + target_keyword + \" not found.\")
+		return
+	download_request.download_file = update_zip_path
+	download_request.request(download_url)
+
+func _on_download_completed(_result: int, response_code: int, _headers: PackedStringArray, _body: PackedByteArray) -> void:
+	if response_code == 200 or response_code == 201: _unpack_and_install()
+
+func _unpack_and_install() -> void:
+	var base_dir = OS.get_executable_path().get_base_dir()
+	var temp_extract_dir = base_dir.path_join(\"update_extracted\")
+	if DirAccess.dir_exists_absolute(temp_extract_dir):
+		OS.move_to_trash(ProjectSettings.globalize_path(temp_extract_dir))
+	DirAccess.make_dir_recursive_absolute(temp_extract_dir)
+	var reader = ZIPReader.new()
+	if reader.open(update_zip_path) != OK:
+		push_error(\"Не удалось открыть ZIP-архив.\")
+		return
+	var files = reader.get_files()
+	for file_name in files:
+		var target_path = temp_extract_dir.path_join(file_name)
+		if file_name.ends_with(\"/\"):
+			DirAccess.make_dir_recursive_absolute(target_path)
+			continue
+		var parent_dir = target_path.get_base_dir()
+		if not DirAccess.dir_exists_absolute(parent_dir):
+			DirAccess.make_dir_recursive_absolute(parent_dir)
+		var content = reader.read_file(file_name)
+		var f = FileAccess.open(target_path, FileAccess.WRITE)
+		if f:
+			f.store_buffer(content)
+			f.close()
+	reader.close()
+	if FileAccess.file_exists(update_zip_path):
+		DirAccess.remove_absolute(update_zip_path)
+	_run_updater(base_dir, temp_extract_dir)
+
+func _run_updater(base_dir: String, temp_dir: String) -> void:
+	var exe_path = OS.get_executable_path()
+	var exe_name = exe_path.get_file()
+	if OS.get_name() == \"Windows\": _create_windows_updater(base_dir, temp_dir, exe_name)
+	else: _create_linux_sh(base_dir, temp_dir, exe_name)
+	get_tree().quit()
+
+func _create_windows_updater(base_dir: String, temp_dir: String, exe_name: String) -> void:
+	var ps_path = base_dir.path_join(\"updater.ps1\")
+	var td = temp_dir.replace(\"/\", \"\\\\\")
+	var bd = base_dir.replace(\"/\", \"\\\\\")
+	var exe_full = base_dir.path_join(exe_name).replace(\"/\", \"\\\\\")
+
+	var ps_content = \"\"\"$exeName = '%s'
+$tempDir = '%s'
+$baseDir = '%s'
+$exePath = '%s'
+
+while ($true) {
+    $running = Get-Process -ErrorAction SilentlyContinue | Where-Object {
+        try { $_.MainModule.FileName -eq $exePath } catch { $false }
+    }
+    if (-not $running) { break }
+    Start-Sleep -Seconds 1
+}
+
+Start-Sleep -Seconds 1
+Copy-Item -Path \"$tempDir\\\\*\" -Destination $baseDir -Recurse -Force
+Remove-Item -Path $tempDir -Recurse -Force
+Start-Process $exePath
+Remove-Item $MyInvocation.MyCommand.Path -Force
+\"\"\" % [exe_name, td, bd, exe_full]
+
+	var f = FileAccess.open(ps_path, FileAccess.WRITE)
+	if f:
+		f.store_buffer(PackedByteArray([0xEF, 0xBB, 0xBF]))  # UTF-8 BOM
+		f.store_string(ps_content)
+		f.close()
+
+	var global_ps_path = ProjectSettings.globalize_path(ps_path)
+	OS.create_process(\"powershell.exe\", [
+		\"-ExecutionPolicy\", \"Bypass\",
+		\"-NonInteractive\",
+		\"-WindowStyle\", \"Hidden\",
+		\"-File\", global_ps_path
+	])
+
+func _create_linux_sh(base_dir: String, temp_dir: String, exe_name: String) -> void:
+	var sh_path = base_dir.path_join(\"updater.sh\")
+	var sh_content = \"\"\"#!/bin/bash
+sleep 2
+cp -rn \"%s/\"* \"%s/\"
+rm -rf \"%s\"
+chmod +x \"%s\"
+\"%s\" &
+rm -- \"$0\"
+\"\"\" % [temp_dir, base_dir, temp_dir, base_dir.path_join(exe_name), base_dir.path_join(exe_name)]
+	var f = FileAccess.open(sh_path, FileAccess.WRITE)
+	f.store_string(sh_content)
+	f.close()
+	OS.execute(\"chmod\", [\"+x\", sh_path])
+	OS.create_process(\"/bin/bash\", [sh_path])
+"
+
+[sub_resource type="GDScript" id="GDScript_bunx7"]
+script/source = "extends Label
+
+func _ready() -> void:
+	text = \"Версия: \" + VersionControl.version
+"
+
+[sub_resource type="GDScript" id="GDScript_gmty7"]
+script/source = "extends Panel
+
+@export var _licence_storange : Node
+@export var _richlabel : RichTextLabel
+
+func _ready() -> void:
+	if _richlabel: _richlabel.text = _licence_storange.get_text(0)
+
+func text_update(value : int):
+	_richlabel.text = _licence_storange.get_text(value)
+"
+
+[sub_resource type="GDScript" id="GDScript_heg84"]
+script/source = "extends Node
+
+var _licence_texts = {
+	0: \"\"\"Copyright © 2026 HorityFox. All rights reserved.
+BSD 2-Clause License
+Copyright (c) 2026, HorityFox\\n
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.\\n
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\"\"\",
+	1: \"\"\"This program uses the LINE Seed JP font. Designed by LY Corporation. Licensed under the SIL Open Font License:\\n
+© LY Corporation
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license is copied below, and is also available with a FAQ at: https://openfontlicense.org\\n
+-----------------------------------------------------------
+SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007
+-----------------------------------------------------------\\n
+PREAMBLE
+The goals of the Open Font License (OFL) are to stimulate worldwide development of collaborative font projects, to support the font creation efforts of academic and linguistic communities, and to provide a free and open framework in which fonts may be shared and improved in partnership with others.\\n
+The OFL allows the licensed fonts to be used, studied, modified and redistributed freely as long as they are not sold by themselves. The fonts, including any derivative works, can be bundled, embedded, redistributed and/or sold with any software provided that any reserved names are not used by derivative works. The fonts and derivatives, however, cannot be released under any other type of license. The requirement for fonts to remain under this license does not apply to any document created using the fonts or their derivatives.\\n
+DEFINITIONS
+\"Font Software\" refers to the set of files released by the Copyright Holder(s) under this license and clearly marked as such. This may include source files, build scripts and documentation.
+\"Reserved Font Name\" refers to any names specified as such after the copyright statement(s).
+\"Original Version\" refers to the collection of Font Software components as distributed by the Copyright Holder(s).
+\"Modified Version\" refers to any derivative made by adding to, deleting, or substituting -- in part or in whole -- any of the components of the Original Version, by changing formats or by porting the Font Software to a new environment.
+\"Author\" refers to any designer, engineer, programmer, technical writer or other person who contributed to the Font Software.\\n
+PERMISSION & CONDITIONS
+Permission is hereby granted, free of charge, to any person obtaining a copy of the Font Software, to use, study, copy, merge, embed, modify, redistribute, and sell modified and unmodified copies of the Font Software, subject to the following conditions:
+1) Neither the Font Software nor any of its individual components, in Original or Modified Versions, may be sold by itself.
+2) Original or Modified Versions of the Font Software may be bundled, redistributed and/or sold with any software, provided that each copy contains the above copyright notice and this license. These can be included either as stand-alone text files, human-readable headers or in the appropriate machine-readable metadata fields within text or binary files as long as those fields can be easily viewed by the user.
+3) No Modified Version of the Font Software may use the Reserved Font Name(s) unless explicit written permission is granted by the corresponding Copyright Holder. This restriction only applies to the primary font name as presented to the users.
+4) The name(s) of the Copyright Holder(s) or the Author(s) of the Font Software shall not be used to promote, endorse or advertise any Modified Version, except to acknowledge the contribution(s) of the Copyright Holder(s) and the Author(s) or with their explicit written permission.
+5) The Font Software, modified or unmodified, in part or in whole, must be distributed entirely under this license, and must not be distributed under any other license. The requirement for fonts to remain under this license does not apply to any document created using the Font Software.\\n
+TERMINATION
+This license becomes null and void if any of the above conditions are not met.\\n
+DISCLAIMER
+THE FONT SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF COPYRIGHT, PATENT, TRADEMARK, OR OTHER RIGHT. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM OTHER DEALINGS IN THE FONT SOFTWARE.
+\"\"\",
+	2: \"\"\"This software uses Godot Engine v4.6.1-stable, licensed under the MIT license:\\n
+Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md).
+Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.\\n
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\\n
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\\n
+THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\"\"\",
+	3: \"\"\"Спасибо, что используете Godot Hub для ваших проектов.
+Я думаю вы и сами устали переключаться между версиями, установленными где то в недрах вашей системы, бороться с ярлыками и путаться, когда запускаешь не ту версию редактора.
+Надеюсь Godot Hub поможет вам избавиться от рутины.\\n
+Ссылки: 
+GitHub: [url=https://github.com/horityfoxy/GodotHub]https://github.com/horityfoxy/GodotHub[/url]\\n
+Я буду рад, если вы сделаете какой-нибудь форк этого хаба или предложите мне идеи что еще можно было бы добавить в программу :)\\n
+Если вы хотите поддержать меня, то можете прислать пару долларов на мой крипто кошелек :)\\n
+USDT TRC20: TFAZ75Tny81jHHS57ZaHh3gUzVVEJo796d
+Bitcoin BTC: bc1qpsmghmr6vn6nz782um5jasxw9snmf0l8gr59hk
+Etherium ETH: 0x6137d23C7A526Af45a49F34bb2Ce49797668Ab31
+Toncoin TON: UQCA6X3HhuQiEHM6sPbF5XpP42vSkpJYkQOZhONM26l7XNZq\\n
+Ваш HorityFox \"\"\"
+}
+
+func get_text(id : int):
+	return _licence_texts.get(id, \"Error: License text not found!\")
+"
+
+[sub_resource type="GDScript" id="GDScript_dm2dr"]
+script/source = "extends Control
+
+signal close_window
+
+@export var panel_bridge : Panel
+@export var _close_button : Button
+
+func _ready() -> void:
+	hide()
+	_close_button.pressed.connect(disable)
+
+func enable() -> void:
+	show()
+	panel_bridge.enable()
+
+func disable() -> void:
+	close_window.emit()
+	hide()
+"
+
+[sub_resource type="GDScript" id="GDScript_gtvj2"]
+script/source = "extends Panel
+
+@export var web_request : Control
+@export var parcing_window : VBoxContainer
+@export var allow_internet_button : Button
+
+func _ready() -> void:
+	allow_internet_button.pressed.connect(allow_internet)
+
+func enable() -> void:
+	if VersionControl.is_internet_allowed(): parcing_window.enable()
+	else: web_request.enable()
+
+func allow_internet():
+	VersionControl.set_internet_allowed(true)
+	web_request.disable()
+	parcing_window.enable()
+"
+
+[sub_resource type="GDScript" id="GDScript_m1xwi"]
+script/source = "extends Control
+
+func enable() -> void:
+	show()
+
+func disable() -> void:
+	hide()
+"
+
+[sub_resource type="GDScript" id="GDScript_imhw3"]
+script/source = "extends VBoxContainer
+
+signal _network_connection_error
+
+@export var _parcing_window : VBoxContainer
+@export var _parcing_hint : Label
+
+func _ready() -> void:
+	_parcing_window.network_connection_error.connect(_network_connection_error.emit)
+	_parcing_window.new_version_found.connect(_hide_hint)
+	_parcing_hint.hide()
+
+func disable():
+	hide()
+
+func enable() -> void:
+	show()
+	_parcing_hint.show()
+	_parcing_window.fetch_godot_releases()
+
+func _hide_hint():
+	_parcing_window.show()
+	_parcing_hint.hide()
+"
+
+[sub_resource type="GDScript" id="GDScript_ibm61"]
+script/source = "extends Control
+
+@export var _start_parsing : Button
+@export var _parcing_window : VBoxContainer
+@export var _parcing_hint : Label
+
+func _ready() -> void:
+	_start_parsing.pressed.connect(refresh_parsing)
+	_parcing_window._network_connection_error.connect(enable)
+
+func enable():
+	_parcing_hint.hide()
+	show()
+
+func disable():
+	hide()
+
+func refresh_parsing():
+	_parcing_window.enable()
+	disable()
+"
+
+[node name="main" type="CanvasLayer" unique_id=2071414279]
+
+[node name="background_color" type="ColorRect" parent="." unique_id=1187307622]
+custom_minimum_size = Vector2(550, 350)
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -74.0
+offset_top = -70.0
+offset_right = 74.0
+offset_bottom = 70.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.078431375, 0.078431375, 0.078431375, 1)
+
+[node name="layout" type="VBoxContainer" parent="." unique_id=290828114]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 13.0
+offset_right = -10.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_01b7x")
+
+[node name="header" type="HBoxContainer" parent="layout" unique_id=612383905 node_paths=PackedStringArray("_settings_button", "_edit_button", "_projects_button", "_varsions_button")]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 1
+script = SubResource("GDScript_usfbk")
+_settings_button = NodePath("settings")
+_edit_button = NodePath("edit")
+_projects_button = NodePath("projects/Button")
+_varsions_button = NodePath("versions/Button")
+
+[node name="spacer" type="ColorRect" parent="layout/header" unique_id=394431728]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+color = Color(0.078431375, 0.078431375, 0.078431375, 0)
+
+[node name="spacer2" type="ColorRect" parent="layout/header" unique_id=189533801]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+color = Color(0.078431375, 0.078431375, 0.078431375, 0)
+
+[node name="projects" type="Control" parent="layout/header" unique_id=608809357]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Button" type="Button" parent="layout/header/projects" unique_id=300001126]
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -115.0
+offset_top = -15.5
+offset_bottom = 15.5
+grow_horizontal = 0
+grow_vertical = 2
+theme = ExtResource("2_c3m70")
+toggle_mode = true
+button_pressed = true
+text = "  Проекты  "
+
+[node name="separator" type="ColorRect" parent="layout/header" unique_id=739218975]
+custom_minimum_size = Vector2(2, 24)
+layout_mode = 2
+size_flags_vertical = 4
+color = Color(0.25882354, 0.25882354, 0.25882354, 1)
+
+[node name="versions" type="Control" parent="layout/header" unique_id=176306662]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Button" type="Button" parent="layout/header/versions" unique_id=1388477591]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_top = -14.5
+offset_right = 101.0
+offset_bottom = 14.5
+grow_vertical = 2
+theme = ExtResource("2_c3m70")
+toggle_mode = true
+text = "  Версии  "
+
+[node name="edit" type="Button" parent="layout/header" unique_id=1475068538]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme = ExtResource("8_t4bcl")
+
+[node name="icon" type="TextureRect" parent="layout/header/edit" unique_id=156282824]
+modulate = Color(0.585062, 0.585062, 0.58506197, 1)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_right = -4.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("3_c3m70")
+expand_mode = 4
+stretch_mode = 5
+
+[node name="settings" type="Button" parent="layout/header" unique_id=1220451796]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme = ExtResource("8_t4bcl")
+
+[node name="icon" type="TextureRect" parent="layout/header/settings" unique_id=633796110]
+modulate = Color(0.585062, 0.585062, 0.58506197, 1)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 5.0
+offset_right = -5.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("1_xpfdc")
+expand_mode = 4
+stretch_mode = 5
+
+[node name="body" type="Control" parent="layout" unique_id=1831959156 node_paths=PackedStringArray("_projects_window", "_versions_window")]
+layout_mode = 2
+size_flags_vertical = 3
+script = SubResource("GDScript_u2n8d")
+_projects_window = NodePath("projects")
+_versions_window = NodePath("versions")
+
+[node name="projects" type="Control" parent="layout/body" unique_id=1588472335 node_paths=PackedStringArray("add_project_button", "_hint", "_project_list")]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = SubResource("GDScript_1n1q0")
+add_project_button = NodePath("add_project")
+_hint = NodePath("hint")
+_project_list = NodePath("ScrollContainer/VBoxContainer")
+
+[node name="hint" type="Label" parent="layout/body/projects" unique_id=1863291649]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = -0.013
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = 48.677002
+offset_top = -57.0
+offset_right = -34.0
+offset_bottom = 3.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.3328807, 0.33288068, 0.33288074, 1)
+theme_override_constants/line_spacing = -12
+theme_override_font_sizes/font_size = 24
+text = "Добавьте проект с диска или создайте его,
+запустив Godot Engine"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="layout/body/projects" unique_id=1205813245]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_bottom = -44.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="layout/body/projects/ScrollContainer" unique_id=622089978]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+script = SubResource("GDScript_2toya")
+
+[node name="add_project" type="Button" parent="layout/body/projects" unique_id=1084465341]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -109.5
+offset_top = -21.0
+offset_right = 109.5
+offset_bottom = 4.0
+grow_horizontal = 2
+grow_vertical = 0
+theme = ExtResource("8_t4bcl")
+text = "Добавить проект с диска"
+
+[node name="versions" type="Control" parent="layout/body" unique_id=1081391640 node_paths=PackedStringArray("add_godot_engine_button", "_hint", "_godot_versions")]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = -0.0009765625
+grow_horizontal = 2
+grow_vertical = 2
+script = SubResource("GDScript_eedq5")
+add_godot_engine_button = NodePath("get_new_version")
+_hint = NodePath("hint")
+_godot_versions = NodePath("ScrollContainer/VBoxContainer")
+
+[node name="hint" type="Label" parent="layout/body/versions" unique_id=1558633693]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = -0.013
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = 79.677
+offset_top = -57.0
+offset_right = -65.0
+offset_bottom = 53.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.3328807, 0.33288068, 0.33288074, 1)
+theme_override_font_sizes/font_size = 24
+text = "Загрузите новую версию Godot Engine"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="layout/body/versions" unique_id=1096962877]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_bottom = -44.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="layout/body/versions/ScrollContainer" unique_id=2052246253]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+script = SubResource("GDScript_2ykvb")
+
+[node name="get_new_version" type="Button" parent="layout/body/versions" unique_id=486015608]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -110.0
+offset_top = -21.0
+offset_right = 110.0
+offset_bottom = 4.0
+grow_horizontal = 2
+grow_vertical = 0
+theme = ExtResource("8_t4bcl")
+text = "Загрузить новую версию"
+
+[node name="footer" type="HBoxContainer" parent="layout" unique_id=1092806049]
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+alignment = 1
+
+[node name="copyright" type="Label" parent="layout/footer" unique_id=1444040752]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.25882354, 0.25882354, 0.25882354, 1)
+theme_override_fonts/font = ExtResource("10_h0f1k")
+theme_override_font_sizes/font_size = 10
+text = "Создано HorityFox для сообщества Godot Engine"
+horizontal_alignment = 1
+uppercase = true
+
+[node name="popup_window" type="Control" parent="." unique_id=182114234 node_paths=PackedStringArray("_blur", "_drag_and_drop_window", "_settings_window", "_get_new_version_window")]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_01b7x")
+script = SubResource("GDScript_d4yno")
+_blur = NodePath("bg")
+_drag_and_drop_window = NodePath("drag_and_drop_project")
+_settings_window = NodePath("settings")
+_get_new_version_window = NodePath("download_godot_window")
+
+[node name="bg" type="ColorRect" parent="popup_window" unique_id=644468900]
+z_index = 1
+material = SubResource("ShaderMaterial_y2wr3")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.03529412, 0.03529412, 0.03529412, 0.3372549)
+script = SubResource("GDScript_cmhxe")
+
+[node name="drag_and_drop_project" type="Control" parent="popup_window" unique_id=1795121393 node_paths=PackedStringArray("_close_window_button", "_drag_and_drop_window")]
+visible = false
+z_index = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = SubResource("GDScript_1vlam")
+_close_window_button = NodePath("window/VBoxContainer/HBoxContainer/close")
+_drag_and_drop_window = NodePath("window")
+
+[node name="path_system" type="Node" parent="popup_window/drag_and_drop_project" unique_id=1489943928 node_paths=PackedStringArray("_scan_projects_button", "_close_window_button", "_file_dialog")]
+script = SubResource("GDScript_vr02l")
+_scan_projects_button = NodePath("../window/VBoxContainer/HBoxContainer/scan_project")
+_close_window_button = NodePath("../window/VBoxContainer/HBoxContainer/close")
+_file_dialog = NodePath("../../FileDialog")
+
+[node name="window" type="Panel" parent="popup_window/drag_and_drop_project" unique_id=1528090570 node_paths=PackedStringArray("drop_zone")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -291.0
+offset_top = -175.0
+offset_right = 291.0
+offset_bottom = 175.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = ExtResource("4_y2wr3")
+script = SubResource("GDScript_g653p")
+drop_zone = NodePath("drop_zone")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="popup_window/drag_and_drop_project/window" unique_id=916510419]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 12.0
+offset_bottom = -12.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Label" type="Label" parent="popup_window/drag_and_drop_project/window/VBoxContainer" unique_id=165494374]
+layout_mode = 2
+theme = ExtResource("14_01b7x")
+text = "Переместите или сканируйте папку с проектами"
+horizontal_alignment = 1
+clip_text = true
+
+[node name="icon" type="Control" parent="popup_window/drag_and_drop_project/window/VBoxContainer" unique_id=204135268]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="TextureRect" type="TextureRect" parent="popup_window/drag_and_drop_project/window/VBoxContainer/icon" unique_id=531745612]
+modulate = Color(0.34407577, 0.34407577, 0.34407565, 1)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -65.0
+offset_top = -65.0
+offset_right = 65.0
+offset_bottom = 65.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("3_ufc4x")
+expand_mode = 4
+stretch_mode = 5
+
+[node name="HBoxContainer" type="HBoxContainer" parent="popup_window/drag_and_drop_project/window/VBoxContainer" unique_id=217887422]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="scan_project" type="Button" parent="popup_window/drag_and_drop_project/window/VBoxContainer/HBoxContainer" unique_id=695065214]
+layout_mode = 2
+theme = ExtResource("8_c3m70")
+text = "Сканировать"
+
+[node name="close" type="Button" parent="popup_window/drag_and_drop_project/window/VBoxContainer/HBoxContainer" unique_id=2029715583]
+layout_mode = 2
+theme = ExtResource("8_t4bcl")
+text = "Закрыть"
+
+[node name="drop_zone" type="Control" parent="popup_window/drag_and_drop_project/window" unique_id=223837236 node_paths=PackedStringArray("_path_system")]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = SubResource("GDScript_jfcuo")
+_path_system = NodePath("../../path_system")
+
+[node name="settings" type="Control" parent="popup_window" unique_id=1532549054 node_paths=PackedStringArray("_settings_window")]
+visible = false
+z_index = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = SubResource("GDScript_c3m70")
+_settings_window = NodePath("settings_window")
+
+[node name="settings_window" type="Panel" parent="popup_window/settings" unique_id=607638348 node_paths=PackedStringArray("_about_button", "_close_settings_button", "_about_window")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -291.0
+offset_top = -175.0
+offset_right = 291.0
+offset_bottom = 175.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = ExtResource("4_y2wr3")
+script = SubResource("GDScript_ecu0m")
+_about_button = NodePath("VBoxContainer/HBoxContainer/about")
+_close_settings_button = NodePath("VBoxContainer/HBoxContainer/close")
+_about_window = NodePath("../about_window")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="popup_window/settings/settings_window" unique_id=292929761]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 12.0
+offset_right = -20.0
+offset_bottom = -12.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Label" type="Label" parent="popup_window/settings/settings_window/VBoxContainer" unique_id=1036067533]
+layout_mode = 2
+theme = ExtResource("14_01b7x")
+text = "Настройки"
+horizontal_alignment = 1
+clip_text = true
+
+[node name="VBoxContainer" type="VBoxContainer" parent="popup_window/settings/settings_window/VBoxContainer" unique_id=534078114]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="language" type="HBoxContainer" parent="popup_window/settings/settings_window/VBoxContainer/VBoxContainer" unique_id=1534520518]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="popup_window/settings/settings_window/VBoxContainer/VBoxContainer/language" unique_id=1707943281]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Язык"
+
+[node name="OptionButton" type="OptionButton" parent="popup_window/settings/settings_window/VBoxContainer/VBoxContainer/language" unique_id=1569932035]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+disabled = true
+alignment = 2
+selected = 0
+item_count = 1
+popup/item_0/text = "Русский"
+popup/item_0/id = 0
+
+[node name="theme" type="HBoxContainer" parent="popup_window/settings/settings_window/VBoxContainer/VBoxContainer" unique_id=1705096437]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="popup_window/settings/settings_window/VBoxContainer/VBoxContainer/theme" unique_id=185104013]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+text = "Тема"
+
+[node name="OptionButton" type="OptionButton" parent="popup_window/settings/settings_window/VBoxContainer/VBoxContainer/theme" unique_id=297769814]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+disabled = true
+alignment = 2
+selected = 0
+item_count = 1
+popup/item_0/text = "HorityFox"
+popup/item_0/id = 0
+
+[node name="HBoxContainer" type="HBoxContainer" parent="popup_window/settings/settings_window/VBoxContainer" unique_id=1776253442]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="about" type="Button" parent="popup_window/settings/settings_window/VBoxContainer/HBoxContainer" unique_id=514248537]
+layout_mode = 2
+theme = ExtResource("8_c3m70")
+text = "О программе"
+
+[node name="close" type="Button" parent="popup_window/settings/settings_window/VBoxContainer/HBoxContainer" unique_id=1872791804]
+layout_mode = 2
+theme = ExtResource("8_t4bcl")
+text = "Закрыть"
+
+[node name="about_window" type="Panel" parent="popup_window/settings" unique_id=266747320 node_paths=PackedStringArray("_view_window", "_godot_hub_button", "_lineseedjp_button", "_godot_engine_button", "_about_program_button", "_close_about_window_button", "_update_button")]
+visible = false
+custom_minimum_size = Vector2(600, 388)
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 276.0
+offset_top = 130.0
+offset_right = -276.0
+offset_bottom = -130.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = ExtResource("4_y2wr3")
+script = SubResource("GDScript_t4bcl")
+_view_window = NodePath("HBoxContainer/view_window")
+_godot_hub_button = NodePath("HBoxContainer/VBoxContainer/Godot Hub")
+_lineseedjp_button = NodePath("HBoxContainer/VBoxContainer/LINESeedJP")
+_godot_engine_button = NodePath("HBoxContainer/VBoxContainer/Godot Engine")
+_about_program_button = NodePath("HBoxContainer/VBoxContainer/About")
+_close_about_window_button = NodePath("HBoxContainer/VBoxContainer/close")
+_update_button = NodePath("HBoxContainer/VBoxContainer/update")
+
+[node name="update_server" type="Node" parent="popup_window/settings/about_window" unique_id=1023931157 node_paths=PackedStringArray("update_button")]
+script = SubResource("GDScript_t5vdr")
+update_button = NodePath("../HBoxContainer/VBoxContainer/update")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="popup_window/settings/about_window" unique_id=281050102]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 8
+
+[node name="VBoxContainer" type="VBoxContainer" parent="popup_window/settings/about_window/HBoxContainer" unique_id=387388089]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Godot Hub" type="Button" parent="popup_window/settings/about_window/HBoxContainer/VBoxContainer" unique_id=191882804]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Godot Hub"
+flat = true
+alignment = 0
+script = ExtResource("15_c3m70")
+
+[node name="LINESeedJP" type="Button" parent="popup_window/settings/about_window/HBoxContainer/VBoxContainer" unique_id=294514142]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "LINESeedJP"
+flat = true
+alignment = 0
+script = ExtResource("15_c3m70")
+ID = 1
+
+[node name="Godot Engine" type="Button" parent="popup_window/settings/about_window/HBoxContainer/VBoxContainer" unique_id=46224630]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Godot Engine"
+flat = true
+alignment = 0
+script = ExtResource("15_c3m70")
+ID = 2
+
+[node name="About" type="Button" parent="popup_window/settings/about_window/HBoxContainer/VBoxContainer" unique_id=2063456667]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Подробнее"
+flat = true
+alignment = 0
+script = ExtResource("15_c3m70")
+ID = 3
+
+[node name="spacer" type="Control" parent="popup_window/settings/about_window/HBoxContainer/VBoxContainer" unique_id=778711187]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Label" type="Label" parent="popup_window/settings/about_window/HBoxContainer/VBoxContainer" unique_id=1124055870]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.37036446, 0.3703645, 0.37036446, 1)
+theme_override_fonts/font = ExtResource("16_ecu0m")
+theme_override_font_sizes/font_size = 12
+text = "Версия: 0.8.2"
+script = SubResource("GDScript_bunx7")
+
+[node name="update" type="Button" parent="popup_window/settings/about_window/HBoxContainer/VBoxContainer" unique_id=747757715]
+layout_mode = 2
+theme = ExtResource("17_gmty7")
+text = "Обновить"
+clip_text = true
+
+[node name="close" type="Button" parent="popup_window/settings/about_window/HBoxContainer/VBoxContainer" unique_id=29047539]
+layout_mode = 2
+theme = ExtResource("8_t4bcl")
+text = "Закрыть"
+clip_text = true
+
+[node name="view_window" type="Panel" parent="popup_window/settings/about_window/HBoxContainer" unique_id=706897794 node_paths=PackedStringArray("_licence_storange", "_richlabel")]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = ExtResource("15_heg84")
+script = SubResource("GDScript_gmty7")
+_licence_storange = NodePath("licence_storange")
+_richlabel = NodePath("RichTextLabel")
+
+[node name="licence_storange" type="Node" parent="popup_window/settings/about_window/HBoxContainer/view_window" unique_id=1451188623]
+script = SubResource("GDScript_heg84")
+
+[node name="RichTextLabel" type="RichTextLabel" parent="popup_window/settings/about_window/HBoxContainer/view_window" unique_id=1157045804]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = 1.0
+offset_right = -2.0
+offset_bottom = -1.0
+grow_horizontal = 2
+grow_vertical = 2
+bbcode_enabled = true
+text = "Спасибо, что используете Godot Hub для ваших проектов.
+Я думаю вы и сами устали переключаться между версиями, установленными где то в недрах вашей системы, бороться с ярлыками и путаться, когда запускаешь не ту версию редактора.
+Надеюсь Godot Hub поможет вам избавиться от рутины.
+
+Ссылки: 
+GitHub: [url=https://github.com/horityfoxy/GodotHub]https://github.com/horityfoxy/GodotHub[/url]
+
+Я буду рад, если вы сделаете какой-нибудь форк этого хаба или предложите мне идеи что еще можно было бы добавить в программу :)
+
+Если вы хотите поддержать меня, то можете прислать пару долларов на мой крипто кошелек :)
+
+USDT TRC20: TFAZ75Tny81jHHS57ZaHh3gUzVVEJo796d
+Bitcoin BTC: bc1qpsmghmr6vn6nz782um5jasxw9snmf0l8gr59hk
+Etherium ETH: 0x6137d23C7A526Af45a49F34bb2Ce49797668Ab31
+Toncoin TON: UQCA6X3HhuQiEHM6sPbF5XpP42vSkpJYkQOZhONM26l7XNZq
+
+Ваш HorityFox "
+
+[node name="accept_window" type="Control" parent="popup_window" unique_id=340021065]
+visible = false
+z_index = 1
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -576.0
+offset_top = -324.0
+offset_right = 576.0
+offset_bottom = 324.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="window" type="Panel" parent="popup_window/accept_window" unique_id=1575082110]
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 487.0
+offset_top = 244.0
+offset_right = -487.0
+offset_bottom = -244.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = ExtResource("4_y2wr3")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="popup_window/accept_window/window" unique_id=836335441]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 33.0
+offset_top = 9.0
+offset_right = -33.0
+offset_bottom = -9.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Label" type="Label" parent="popup_window/accept_window/window/VBoxContainer" unique_id=968356342]
+layout_mode = 2
+theme = ExtResource("14_01b7x")
+text = "Вы уверены?"
+horizontal_alignment = 1
+clip_text = true
+
+[node name="separator" type="Control" parent="popup_window/accept_window/window/VBoxContainer" unique_id=476132989]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="HBoxContainer" type="VBoxContainer" parent="popup_window/accept_window/window/VBoxContainer" unique_id=161975887]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="no" type="Button" parent="popup_window/accept_window/window/VBoxContainer/HBoxContainer" unique_id=575387094]
+layout_mode = 2
+theme = ExtResource("8_c3m70")
+text = "Нет"
+
+[node name="yes" type="Button" parent="popup_window/accept_window/window/VBoxContainer/HBoxContainer" unique_id=1636238717]
+layout_mode = 2
+theme = ExtResource("8_t4bcl")
+text = "Да"
+
+[node name="download_godot_window" type="Control" parent="popup_window" unique_id=9572961 node_paths=PackedStringArray("panel_bridge", "_close_button")]
+visible = false
+z_index = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = SubResource("GDScript_dm2dr")
+panel_bridge = NodePath("window/VBoxContainer/HBoxContainer/Panel")
+_close_button = NodePath("window/VBoxContainer/HBoxContainer2/close")
+
+[node name="window" type="Panel" parent="popup_window/download_godot_window" unique_id=1883297188]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -334.0
+offset_top = -201.0
+offset_right = 334.0
+offset_bottom = 201.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = ExtResource("4_y2wr3")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="popup_window/download_godot_window/window" unique_id=1233013613]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 8
+
+[node name="HBoxContainer" type="HBoxContainer" parent="popup_window/download_godot_window/window/VBoxContainer" unique_id=1664501230]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="Panel" type="Panel" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer" unique_id=248275832 node_paths=PackedStringArray("web_request", "parcing_window", "allow_internet_button")]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = ExtResource("15_heg84")
+script = SubResource("GDScript_gtvj2")
+web_request = NodePath("privacy_window")
+parcing_window = NodePath("parcing")
+allow_internet_button = NodePath("privacy_window/Button")
+
+[node name="privacy_window" type="Control" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel" unique_id=1724254437]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 1.0
+offset_top = 1.0
+offset_right = -1.0
+offset_bottom = -1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = SubResource("GDScript_m1xwi")
+
+[node name="Label" type="Label" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel/privacy_window" unique_id=23306093]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -314.0
+offset_top = -25.0
+offset_right = 314.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.5211406, 0.5211406, 0.5211405, 1)
+text = "Пожалуйста, разрешите Godot Hub доступ к интернету"
+horizontal_alignment = 1
+clip_text = true
+
+[node name="Button" type="Button" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel/privacy_window" unique_id=1591528002]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -42.5
+offset_top = 1.5
+offset_right = 42.5
+offset_bottom = 18.5
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("8_c3m70")
+theme_override_font_sizes/font_size = 14
+text = "Разрешить"
+
+[node name="parcing" type="VBoxContainer" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel" unique_id=974929392 node_paths=PackedStringArray("_parcing_window", "_parcing_hint")]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 1.0
+offset_right = -8.0
+offset_bottom = -1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = SubResource("GDScript_imhw3")
+_parcing_window = NodePath("ScrollContainer/VBoxContainer")
+_parcing_hint = NodePath("../Label")
+
+[node name="filters" type="Control" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel/parcing" unique_id=812555803]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel/parcing/filters" unique_id=125602752]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="CheckBox" type="CheckBox" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel/parcing/filters/HBoxContainer" unique_id=1113549055]
+layout_mode = 2
+disabled = true
+text = "Godot 3x"
+
+[node name="CheckBox2" type="CheckBox" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel/parcing/filters/HBoxContainer" unique_id=1666293915]
+layout_mode = 2
+disabled = true
+text = "Godot 4x"
+
+[node name="ScrollContainer" type="ScrollContainer" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel/parcing" unique_id=802356968]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel/parcing/ScrollContainer" unique_id=1632576858]
+layout_mode = 2
+size_flags_horizontal = 3
+script = ExtResource("17_t4bcl")
+
+[node name="HTTPRequest" type="HTTPRequest" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel/parcing/ScrollContainer/VBoxContainer" unique_id=790924583]
+
+[node name="Label" type="Label" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel" unique_id=304435458]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -8.5
+offset_right = 20.0
+offset_bottom = 8.5
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.556953, 0.556953, 0.556953, 1)
+text = "Ищем новые версии"
+
+[node name="no_internet_window" type="Control" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel" unique_id=1709420593 node_paths=PackedStringArray("_start_parsing", "_parcing_window", "_parcing_hint")]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = SubResource("GDScript_ibm61")
+_start_parsing = NodePath("Button")
+_parcing_window = NodePath("../parcing")
+_parcing_hint = NodePath("../Label")
+
+[node name="Label" type="Label" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel/no_internet_window" unique_id=417333005]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -314.0
+offset_top = -25.0
+offset_right = 314.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.5211406, 0.5211406, 0.5211405, 1)
+text = "Нет подключения к интернету"
+horizontal_alignment = 1
+clip_text = true
+
+[node name="Button" type="Button" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/Panel/no_internet_window" unique_id=1764254767]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -42.5
+offset_top = 1.5
+offset_right = 42.5
+offset_bottom = 18.5
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("8_c3m70")
+theme_override_font_sizes/font_size = 14
+text = "Повторить"
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="popup_window/download_godot_window/window/VBoxContainer" unique_id=1375368766]
+layout_mode = 2
+alignment = 1
+
+[node name="scan_project" type="Button" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer2" unique_id=507896509]
+layout_mode = 2
+theme = ExtResource("8_t4bcl")
+disabled = true
+text = "Найти на диске"
+
+[node name="close" type="Button" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer2" unique_id=332809183]
+layout_mode = 2
+size_flags_horizontal = 4
+theme = ExtResource("8_t4bcl")
+text = "Закрыть"
+
+[node name="FileDialog" type="FileDialog" parent="popup_window" unique_id=1338183012]
+oversampling_override = 1.0
+title = "Open a Directory"
+position = Vector2i(0, 36)
+file_mode = 2
+access = 2
+use_native_dialog = true

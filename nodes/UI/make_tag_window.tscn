@@ -1,0 +1,218 @@
+[gd_scene format=3 uid="uid://b1m6pnufuhomn"]
+
+[ext_resource type="StyleBox" uid="uid://bp61ffljbpmex" path="res://src/themes/horityfox/panels/drop_down_window.tres" id="1_ixniu"]
+[ext_resource type="Shader" uid="uid://byngotg8qg1j8" path="res://scripts/shaders/tag_color_circle.gdshader" id="2_rm8n2"]
+[ext_resource type="Theme" uid="uid://yvm1xfbgaxnr" path="res://src/themes/horityfox/line_edit/drop_down_line_edit.tres" id="3_lksv0"]
+[ext_resource type="Theme" uid="uid://bme18nb43kckb" path="res://src/themes/horityfox/buttons/gray/gray_button.tres" id="4_ru5yo"]
+[ext_resource type="Texture2D" uid="uid://cualc1sqm0gbo" path="res://src/sprites/bin/bin_logo.svg" id="5_oyc4s"]
+[ext_resource type="Theme" uid="uid://c06aoxshvcfhh" path="res://src/themes/horityfox/buttons/blue/blue_button.tres" id="6_nekxq"]
+[ext_resource type="Texture2D" uid="uid://cvt04wwc1j8bj" path="res://src/sprites/check_mark/check_mark_symbol.svg" id="7_8ub5x"]
+
+[sub_resource type="GDScript" id="GDScript_ixniu"]
+script/source = "extends Panel
+
+signal new_tag_text(value : String)
+signal new_tag_color(value : Color)
+signal remove_tag
+signal make_tag
+
+@export var _line_edit : LineEdit
+@export var _colors : HBoxContainer
+@export_category(\"Buttons\")
+@export var _remove_button : Button
+@export var _create_button : Button
+
+var _text = \"\"
+
+func _ready() -> void:
+	_line_edit.text_changed.connect(_set_text)
+	_colors.selected_color.connect(new_tag_color.emit)
+	_remove_button.pressed.connect(remove_tag.emit)
+	_create_button.pressed.connect(_make_tag)
+
+func _set_text(value : String):
+	_text = value
+	new_tag_text.emit(value) 
+
+func _make_tag():
+	if _text == \"\": return
+	make_tag.emit()
+	queue_free()
+
+func _input(event: InputEvent) -> void:
+	if not event is InputEventKey or not event.pressed: return
+	if event.is_action_pressed(\"ui_accept\"): _make_tag()
+	elif event.is_action_pressed(\"ui_cancel\"): remove_tag.emit()
+"
+
+[sub_resource type="GDScript" id="GDScript_rm8n2"]
+script/source = "extends HBoxContainer
+
+signal selected_color(value: Color)
+
+@onready var selected_dot = $blue/selected_dot
+
+func _ready() -> void:
+	var first_child = get_child(0) as ColorRect
+	selected_color.emit(first_child.color)
+	
+	for color_node in get_children():
+		if color_node is ColorRect: color_node.gui_input.connect(_on_color_gui_input.bind(color_node))
+
+func _on_color_gui_input(event: InputEvent, node: ColorRect) -> void:
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed: _select_new_color(node)
+
+func _select_new_color(target_node: ColorRect) -> void:
+	selected_dot.reparent(target_node, false)
+	selected_dot.position = (target_node.size / 2.0) - (selected_dot.size / 2.0)
+	selected_color.emit(target_node.color)
+"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_glaaw"]
+shader = ExtResource("2_rm8n2")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_46d32"]
+shader = ExtResource("2_rm8n2")
+
+[node name="make_tag_window" type="Panel" unique_id=689473586 node_paths=PackedStringArray("_line_edit", "_colors", "_remove_button", "_create_button")]
+top_level = true
+offset_top = 6.0
+offset_right = 252.0
+offset_bottom = 62.0
+theme_override_styles/panel = ExtResource("1_ixniu")
+script = SubResource("GDScript_ixniu")
+_line_edit = NodePath("VBoxContainer/HBoxContainer/LineEdit")
+_colors = NodePath("VBoxContainer/colors")
+_remove_button = NodePath("VBoxContainer/HBoxContainer/remove")
+_create_button = NodePath("VBoxContainer/HBoxContainer/create")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=83125191]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = -4.0
+offset_bottom = -4.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="colors" type="HBoxContainer" parent="VBoxContainer" unique_id=862363855]
+layout_mode = 2
+size_flags_vertical = 3
+script = SubResource("GDScript_rm8n2")
+
+[node name="blue" type="ColorRect" parent="VBoxContainer/colors" unique_id=314236927]
+material = SubResource("ShaderMaterial_glaaw")
+custom_minimum_size = Vector2(18, 0)
+layout_mode = 2
+color = Color(0.054011196, 0.33442545, 0.76175696, 1)
+
+[node name="selected_dot" type="ColorRect" parent="VBoxContainer/colors/blue" unique_id=22649454]
+material = SubResource("ShaderMaterial_46d32")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 6.0
+offset_top = 6.0
+offset_right = -6.0
+offset_bottom = -6.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="red" type="ColorRect" parent="VBoxContainer/colors" unique_id=1970833758]
+material = SubResource("ShaderMaterial_glaaw")
+custom_minimum_size = Vector2(18, 0)
+layout_mode = 2
+color = Color(0.27036092, 0.4025006, 0.32258186, 1)
+
+[node name="green" type="ColorRect" parent="VBoxContainer/colors" unique_id=646441329]
+material = SubResource("ShaderMaterial_glaaw")
+custom_minimum_size = Vector2(18, 0)
+layout_mode = 2
+color = Color(0.050980393, 0.4117647, 0.17254902, 1)
+
+[node name="orange" type="ColorRect" parent="VBoxContainer/colors" unique_id=1645007661]
+material = SubResource("ShaderMaterial_glaaw")
+custom_minimum_size = Vector2(18, 0)
+layout_mode = 2
+color = Color(0.64117706, 0.34358284, 6.738305e-07, 1)
+
+[node name="yellow" type="ColorRect" parent="VBoxContainer/colors" unique_id=51044581]
+material = SubResource("ShaderMaterial_glaaw")
+custom_minimum_size = Vector2(18, 0)
+layout_mode = 2
+color = Color(0.6114037, 0.46480638, 0.10828685, 1)
+
+[node name="purple" type="ColorRect" parent="VBoxContainer/colors" unique_id=59930435]
+material = SubResource("ShaderMaterial_glaaw")
+custom_minimum_size = Vector2(18, 0)
+layout_mode = 2
+color = Color(0.32156864, 0.1254902, 0.5058824, 1)
+
+[node name="pink" type="ColorRect" parent="VBoxContainer/colors" unique_id=952627391]
+material = SubResource("ShaderMaterial_glaaw")
+custom_minimum_size = Vector2(18, 0)
+layout_mode = 2
+color = Color(0.75686276, 0.10980392, 0.5176471, 1)
+
+[node name="gray" type="ColorRect" parent="VBoxContainer/colors" unique_id=454883244]
+material = SubResource("ShaderMaterial_glaaw")
+custom_minimum_size = Vector2(18, 0)
+layout_mode = 2
+color = Color(0.4026711, 0.33407202, 0.3964316, 1)
+
+[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer" unique_id=1275405554]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="LineEdit" type="LineEdit" parent="VBoxContainer/HBoxContainer" unique_id=2048075463]
+z_index = 3
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("3_lksv0")
+placeholder_text = " Новый тег..."
+max_length = 14
+
+[node name="remove" type="Button" parent="VBoxContainer/HBoxContainer" unique_id=340720532]
+layout_mode = 2
+theme = ExtResource("4_ru5yo")
+text = "  "
+
+[node name="icon_bin" type="TextureRect" parent="VBoxContainer/HBoxContainer/remove" unique_id=213321557]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 7.0
+offset_top = 1.0
+offset_right = -7.0
+offset_bottom = -1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("5_oyc4s")
+expand_mode = 4
+stretch_mode = 5
+
+[node name="create" type="Button" parent="VBoxContainer/HBoxContainer" unique_id=1350556159]
+layout_mode = 2
+theme = ExtResource("6_nekxq")
+text = "  "
+
+[node name="icon_make" type="TextureRect" parent="VBoxContainer/HBoxContainer/create" unique_id=114496966]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 7.0
+offset_top = 0.5
+offset_right = -7.0
+offset_bottom = -0.5
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("7_8ub5x")
+expand_mode = 4
+stretch_mode = 5

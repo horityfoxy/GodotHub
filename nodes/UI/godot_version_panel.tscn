@@ -1,0 +1,117 @@
+[gd_scene format=3 uid="uid://bly605cjfk4h6"]
+
+[ext_resource type="StyleBox" uid="uid://08qpf6v4ihhn" path="res://src/themes/horityfox/panels/project_panels.tres" id="1_2r1el"]
+[ext_resource type="Texture2D" uid="uid://bx40bofn7yy27" path="res://icon.svg" id="2_aoypn"]
+[ext_resource type="Theme" uid="uid://dg2fsakmvw63" path="res://src/themes/horityfox/buttons/red/red_button.tres" id="3_vrk3i"]
+[ext_resource type="Texture2D" uid="uid://cualc1sqm0gbo" path="res://src/sprites/bin/bin_logo.svg" id="4_gwg10"]
+[ext_resource type="Theme" uid="uid://c06aoxshvcfhh" path="res://src/themes/horityfox/buttons/blue/blue_button.tres" id="5_ompp8"]
+
+[sub_resource type="GDScript" id="GDScript_2r1el"]
+script/source = "extends panel_base
+
+var _edit_mode : bool = false
+var _version_id : String = \"\"
+
+@export var _launch_button : Button
+
+func _ready() -> void:
+	_remove_button.hide()
+	EventBus.edit_button_pressed.connect(_edit_mode_enable)
+	_launch_button.pressed.connect(_launch_engine_version)
+	super()
+
+func set_version_id(v_id: String) -> void: _version_id = v_id
+
+func _edit_mode_enable() -> void:
+	_edit_mode = !_edit_mode
+	_remove_button.visible = _edit_mode
+
+func remove() -> void:
+	if not _version_id.is_empty(): 
+		_delete_version_data(_version_id)
+		VersionControl.remove_engine_folder(_version_id)
+	super()
+
+func _delete_version_data(v_id: String) -> void:
+	if VersionControl._versions_data.has(v_id):
+		VersionControl._versions_data.erase(v_id)
+		VersionControl.save_data()
+
+func _launch_engine_version() -> void:
+	var godot_path = VersionControl.get_godot_path(_version_id)
+	if godot_path.is_empty(): return
+	if not FileAccess.file_exists(godot_path): return
+	var pid: int = OS.create_process(godot_path, [])
+	
+	if pid > 0: get_tree().quit()
+	else: printerr(\"Error: Godot Engine proccess doesn't started.\")
+"
+
+[node name="version_1" type="Panel" unique_id=241060482 node_paths=PackedStringArray("_launch_button", "_label_name", "_icon_texture", "_remove_button")]
+custom_minimum_size = Vector2(0, 72)
+theme_override_styles/panel = ExtResource("1_2r1el")
+script = SubResource("GDScript_2r1el")
+_launch_button = NodePath("HBoxContainer/edit_project")
+_label_name = NodePath("HBoxContainer/Label")
+_icon_texture = NodePath("HBoxContainer/icon")
+_remove_button = NodePath("HBoxContainer/remove_project")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=32534656]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = -9.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 12
+
+[node name="icon" type="TextureRect" parent="HBoxContainer" unique_id=1125983639]
+custom_minimum_size = Vector2(56, 56)
+layout_mode = 2
+texture = ExtResource("2_aoypn")
+expand_mode = 4
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="HBoxContainer" unique_id=623955403]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+text = "Godot engine 4.6.1"
+clip_text = true
+
+[node name="remove_project" type="Button" parent="HBoxContainer" unique_id=1147381352]
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+size_flags_vertical = 4
+theme = ExtResource("3_vrk3i")
+theme_override_font_sizes/font_size = 14
+text = "  "
+
+[node name="icon" type="TextureRect" parent="HBoxContainer/remove_project" unique_id=815318469]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 1.0
+offset_top = 3.0
+offset_right = -1.0
+offset_bottom = -3.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("4_gwg10")
+expand_mode = 2
+stretch_mode = 5
+
+[node name="edit_project" type="Button" parent="HBoxContainer" unique_id=1341672522]
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+size_flags_vertical = 4
+theme = ExtResource("5_ompp8")
+theme_override_font_sizes/font_size = 14
+text = "Запустить"

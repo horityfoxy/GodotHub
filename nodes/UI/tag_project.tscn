@@ -1,0 +1,150 @@
+[gd_scene format=3 uid="uid://c4dcycfjtp4yh"]
+
+[ext_resource type="PackedScene" uid="uid://b1m6pnufuhomn" path="res://nodes/UI/make_tag_window.tscn" id="1_qtar0"]
+[ext_resource type="StyleBox" uid="uid://ovabik1anw2d" path="res://src/themes/horityfox/tags/tag.tres" id="2_wuj5o"]
+
+[sub_resource type="GDScript" id="GDScript_g1chl"]
+script/source = "extends RichTextLabel
+
+signal tag_created
+
+var _tag_text : String = \"\"
+var _strikethrough_text = \"\"
+var _project_id : String = \"\"
+var _color_tag : Color = Color(\"0e55c2\")
+var _color_remove : Color = Color(\"e9002c\")
+
+@export var _make_tag_window : PackedScene
+@export var _spawn_make_window_point : Control
+@export var _background : Panel
+
+var _edit_mode : bool = false
+
+func _ready() -> void:
+	mouse_entered.connect(_remove_mouse_entered)
+	mouse_exited.connect(_remove_mouse_exited)
+	EventBus.edit_button_pressed.connect(_enable_edit_mode)
+	gui_input.connect(on_tag_clicked)
+	set_tag_text(\" ... \")
+	spawn()
+
+func _enable_edit_mode():
+	_edit_mode = !_edit_mode
+
+func on_tag_clicked(event: InputEvent) -> void:
+	if _edit_mode == false: return
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed: _remove_tag()
+
+func set_project_id(value : String):
+	_project_id = value
+
+func set_color(value : Color):
+	_color_tag = value
+	_background.set_color(_color_tag)
+
+func set_tag_text(value : String):
+	_tag_text = \" \" + value + \" \"
+	_strikethrough_text = \" [s]\" + value + \"[/s] \"
+	text = _tag_text
+
+func _remove_mouse_entered():
+	if _edit_mode == false: return
+	text = _strikethrough_text
+	_background.set_color(_color_remove)
+
+func _remove_mouse_exited():
+	if _edit_mode == false: return
+	text = _tag_text
+	_background.set_color(_color_tag)
+
+func spawn():
+	var window = _make_tag_window.instantiate()
+	
+	if window.has_signal(\"new_tag_text\"): window.new_tag_text.connect(set_tag_text)
+	if window.has_signal(\"remove_tag\"): window.remove_tag.connect(_remove_tag)
+	if window.has_signal(\"make_tag\"): window.make_tag.connect(_make_tag)
+	if window.has_signal(\"new_tag_color\"): window.new_tag_color.connect(set_color)
+	
+	_spawn_make_window_point.add_child(window)
+	window.top_level = true
+	window.global_position = _spawn_make_window_point.global_position + Vector2(0, 4)
+
+func off_settings_window():
+	_spawn_make_window_point.get_child(0).queue_free()
+
+func _remove_tag():
+	var clean_name = _tag_text.strip_edges()
+	SaveSystem.remove_tag_from_project(_project_id, clean_name)
+	EventBus.tag_count_change.emit.call_deferred(_project_id)
+	queue_free()
+
+func _make_tag():
+	var clean_name = _tag_text.strip_edges()
+	SaveSystem.add_tag(_project_id, clean_name, _color_tag)
+	tag_created.emit()
+"
+
+[sub_resource type="GDScript" id="GDScript_qtar0"]
+script/source = "extends Panel
+
+const BASE_STYLE_BOX = preload(\"res://src/themes/horityfox/tags/tag.tres\")
+
+var _unique_style: StyleBoxFlat
+
+func _ready() -> void:
+	if BASE_STYLE_BOX is StyleBoxFlat:
+		_unique_style = BASE_STYLE_BOX.duplicate()
+		add_theme_stylebox_override(\"panel\", _unique_style)
+	else:
+		push_error(\"The uploaded resource is not StyleBoxFlat!\")
+
+func set_color(value: Color):
+	if not _unique_style: return
+	_unique_style.bg_color = value
+	var border_color = value.lightened(0.2)
+	_unique_style.border_color = border_color
+"
+
+[node name="tag" type="RichTextLabel" unique_id=796151240 node_paths=PackedStringArray("_spawn_make_window_point", "_background") groups=["user_tag"]]
+z_index = 1
+clip_contents = false
+offset_right = 23.0
+offset_bottom = 18.0
+theme_override_font_sizes/normal_font_size = 12
+bbcode_enabled = true
+text = "  ...  "
+fit_content = true
+scroll_active = false
+autowrap_mode = 0
+vertical_alignment = 1
+script = SubResource("GDScript_g1chl")
+_make_tag_window = ExtResource("1_qtar0")
+_spawn_make_window_point = NodePath("spawn_make_window_point")
+_background = NodePath("background")
+
+[node name="background" type="Panel" parent="." unique_id=667348929]
+z_index = -1
+custom_minimum_size = Vector2(0, 18)
+layout_mode = 1
+anchors_preset = 14
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_top = -9.0
+offset_bottom = 9.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("2_wuj5o")
+script = SubResource("GDScript_qtar0")
+
+[node name="spawn_make_window_point" type="Control" parent="." unique_id=1899731480]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = 1.0
+offset_bottom = 1.0
+grow_vertical = 0

@@ -1,0 +1,144 @@
+[gd_scene format=3 uid="uid://cgxocv277cv8p"]
+
+[ext_resource type="StyleBox" uid="uid://08qpf6v4ihhn" path="res://src/themes/horityfox/panels/project_panels.tres" id="1_vg8ly"]
+[ext_resource type="Texture2D" uid="uid://bx40bofn7yy27" path="res://icon.svg" id="2_pttj3"]
+[ext_resource type="Theme" uid="uid://c06aoxshvcfhh" path="res://src/themes/horityfox/buttons/blue/blue_button.tres" id="3_1ubim"]
+
+[sub_resource type="GDScript" id="GDScript_vg8ly"]
+script/source = "# engine_version_parsing_panel.gd
+extends Panel
+
+const ENGINE_FOLDER : String = \"user://engines/\"
+
+var _link : String = \"\"
+var _version_text_label : String = \"\" 
+
+var is_downloading : bool = false
+
+@export var _download_button : Button
+@export var _version_text : Label
+
+func _ready() -> void:
+	if _download_button and not _download_button.pressed.is_connected(_download):
+		_download_button.pressed.connect(_download)
+
+func set_link(value : String) -> void: _link = value
+
+func set_version_text(value: String) -> void:
+	_version_text_label = value
+	if _version_text: 
+		_version_text.text = _version_text_label
+	var pure_version = _version_text_label.replace(\"Godot engine \", \"\").strip_edges()
+	var saved_path = VersionControl.get_godot_path(pure_version)
+	if not saved_path.is_empty() and FileAccess.file_exists(saved_path):
+		if _download_button: _download_button.text = \"Переустановить\"
+	else:
+		if _download_button: _download_button.text = \"Загрузить\"
+
+func _download() -> void:
+	if _link.is_empty(): return
+	if not DirAccess.dir_exists_absolute(ENGINE_FOLDER): DirAccess.make_dir_recursive_absolute(ENGINE_FOLDER)
+	is_downloading = true
+	var file_name = _link.get_file()
+	var zip_save_path = ENGINE_FOLDER + file_name
+	var http_node = HTTPRequest.new()
+	add_child(http_node)
+	http_node.download_file = zip_save_path
+	http_node.request_completed.connect(_on_download_completed.bind(http_node, zip_save_path))
+	_download_button.disabled = true
+	_download_button.text = \"Загрузка...\"
+	http_node.request(_link)
+
+func _on_download_completed(result: int, response_code: int, _headers: PackedStringArray, _body: PackedByteArray, node: HTTPRequest, zip_path: String) -> void:
+	node.queue_free()
+	if result == HTTPRequest.RESULT_SUCCESS and response_code == 200:
+		_download_button.text = \"Распаковка...\"
+		_unzip_and_cleanup(zip_path)
+	else:
+		is_downloading = false
+		_download_button.disabled = false
+		_download_button.text = \"Ошибка\"
+
+func _unzip_and_cleanup(zip_path: String) -> void:
+	var pure_version = _version_text_label.replace(\"Godot engine \", \"\").strip_edges()
+	var version_dir = ENGINE_FOLDER + pure_version + \"/\"
+	if not DirAccess.dir_exists_absolute(version_dir):
+		DirAccess.make_dir_recursive_absolute(version_dir)
+	
+	var reader := ZIPReader.new()
+	var err = reader.open(zip_path)
+	if err != OK:
+		print(\"Ошибка открытия архива\")
+		return
+	var files = reader.get_files()
+	var exe_path = \"\"
+	
+	for file in files:
+		var content = reader.read_file(file)
+		var target_path = version_dir + file
+		if file.ends_with(\"/\"):
+			DirAccess.make_dir_recursive_absolute(target_path)
+			continue
+		
+		var f = FileAccess.open(target_path, FileAccess.WRITE)
+		if f:
+			f.store_buffer(content)
+			f.close()
+		
+		if _is_executable(file): exe_path = ProjectSettings.globalize_path(target_path)
+	
+	reader.close()
+	DirAccess.remove_absolute(zip_path)
+	
+	if not exe_path.is_empty():
+		VersionControl.set_godot_path(pure_version, exe_path)
+	EventBus.version_update.emit()
+	_download_button.disabled = false
+	_download_button.text = \"Переустановить\"
+
+func _is_executable(file_name: String) -> bool:
+	var lower_name = file_name.to_lower()
+	if OS.get_name() == \"Windows\":
+		return lower_name.ends_with(\".exe\") and not \"console\" in lower_name
+	return not lower_name.contains(\".\") or lower_name.ends_with(\".x86_64\")
+"
+
+[node name="engine_version_parsing" type="Panel" unique_id=884247842 node_paths=PackedStringArray("_download_button", "_version_text")]
+custom_minimum_size = Vector2(0, 54)
+size_flags_vertical = 3
+theme_override_styles/panel = ExtResource("1_vg8ly")
+script = SubResource("GDScript_vg8ly")
+_download_button = NodePath("HBoxContainer/download_button")
+_version_text = NodePath("HBoxContainer/Label")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=140158541]
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 7.0
+offset_top = 7.0
+offset_right = -7.0
+offset_bottom = -7.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 5
+
+[node name="TextureRect" type="TextureRect" parent="HBoxContainer" unique_id=1635356889]
+layout_mode = 2
+texture = ExtResource("2_pttj3")
+expand_mode = 2
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="HBoxContainer" unique_id=455596800]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Godot 4.6.1"
+
+[node name="download_button" type="Button" parent="HBoxContainer" unique_id=778361184]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme = ExtResource("3_1ubim")
+theme_override_font_sizes/font_size = 12
+text = "загрузить"
