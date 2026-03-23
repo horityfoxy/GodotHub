@@ -30,9 +30,6 @@ func _ready() -> void:
 	if _run_button: _run_button.pressed.connect(_run_project)
 	EventBus.edit_button_pressed.connect(_edit_mode_enable)
 	EventBus.version_update.connect(_update_godot_path)
-	
-	#_problem_detected_button.enable(_project_id, false)
-	
 	_tags_zones._set_id(_get_id())
 	super()
 
