@@ -30,9 +30,10 @@ func set_version_id(v_id: String) -> void:
 func _check_engine_path() -> void:
 	var godot_path = VersionControl.get_godot_path(_version_id)
 	if not godot_path.is_empty() and FileAccess.file_exists(godot_path):
-		if _launch_button: _launch_button.disabled = false
+		_launch_button.disabled = false
 	else:
 		if _problem_detected_button: 
+			_launch_button.disabled = true
 			_problem_detected_button.enable(_version_id, true)
 			set_destroy_icon()
 			set_strikethrough_text()
@@ -55,7 +56,9 @@ func _delete_version_data(v_id: String) -> void:
 
 func _launch_engine_version() -> void:
 	var godot_path = VersionControl.get_godot_path(_version_id)
-	if godot_path.is_empty() or not FileAccess.file_exists(godot_path): return
+	if godot_path.is_empty() or not FileAccess.file_exists(godot_path): 
+		_check_engine_path()
+		return
 	
 	var pid: int = OS.create_process(godot_path, [])
 	if pid > 0: get_tree().quit()
@@ -92,11 +95,12 @@ func _edit_mode_enable() -> void:
 	visible = _edit_mode
 "
 
-[node name="version_1" type="Panel" unique_id=241060482 node_paths=PackedStringArray("_launch_button", "_hint", "_label_name", "_icon_texture", "_remove_button")]
+[node name="version_1" type="Panel" unique_id=241060482 node_paths=PackedStringArray("_launch_button", "_problem_detected_button", "_hint", "_label_name", "_icon_texture", "_remove_button")]
 custom_minimum_size = Vector2(0, 72)
 theme_override_styles/panel = ExtResource("1_2r1el")
 script = SubResource("GDScript_2r1el")
 _launch_button = NodePath("HBoxContainer/edit_project")
+_problem_detected_button = NodePath("HBoxContainer/problem_detected_button")
 _hint = NodePath("HBoxContainer/remove_project/hint")
 _label_name = NodePath("HBoxContainer/RichLabelText")
 _icon_texture = NodePath("HBoxContainer/icon")

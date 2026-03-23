@@ -64,6 +64,7 @@ func launch_project_in_editor(_args : PackedStringArray) -> void:
 		return
 	if _project_path == \"\":
 		printerr(\"ERROR: Project path is empty!\")
+		set_missing_state()
 		return
 	var pid: int = OS.create_process(_godot_path, _args)
 	if pid > 0: if _args.has(\"-e\"): get_tree().quit()
