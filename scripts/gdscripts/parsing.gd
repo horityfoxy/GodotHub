@@ -58,7 +58,16 @@ func update_ui() -> void:
 	var show_all = (filter_4 == filter_3)
 	var active_downloads: Array[String] = []
 	for child in get_children():
-		if child is Panel: child.queue_free()
+		if child is Panel:
+			if child.get("is_downloading") == true:
+				var pure_version = child._version_text_label.replace("Godot engine ", "").strip_edges()
+				active_downloads.append(pure_version)
+				var is_v4 = pure_version.begins_with("4")
+				var is_v3 = pure_version.begins_with("3")
+				if show_all or (filter_4 and is_v4) or (filter_3 and is_v3): child.show()
+				else: child.hide()
+				continue
+			child.queue_free()
 	var filtered_list: Array = []
 	var source_list = windows_releases if OS.get_name() == "Windows" else linux_releases
 	for item in source_list:

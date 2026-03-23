@@ -29,3 +29,7 @@ signal tag_count_change(project_id: String)
 signal version_update
 @warning_ignore("unused_signal")
 signal godot_installed_version_changed
+
+## PATH FIX SIGNALS ##
+@warning_ignore("unused_signal")
+signal fix_activate(id : String)

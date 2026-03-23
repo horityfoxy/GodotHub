@@ -1,0 +1,11 @@
+[gd_resource type="Theme" format=3 uid="uid://bngida3pccgox"]
+
+[ext_resource type="FontFile" uid="uid://cev2ga8asvqgc" path="res://src/fonts/LINESeedJP/LINESeedJP-Regular.ttf" id="1_ehykw"]
+[ext_resource type="FontFile" uid="uid://crxptqsk1pq64" path="res://src/fonts/LINESeedJP/LINESeedJP-Bold.ttf" id="1_is5cb"]
+
+[resource]
+RichTextLabel/colors/default_color = Color(0.8732984, 0.8732984, 0.8732984, 1)
+RichTextLabel/font_sizes/bold_font_size = 10
+RichTextLabel/font_sizes/normal_font_size = 10
+RichTextLabel/fonts/bold_font = ExtResource("1_is5cb")
+RichTextLabel/fonts/normal_font = ExtResource("1_ehykw")

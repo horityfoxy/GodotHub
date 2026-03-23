@@ -3,19 +3,26 @@ extends Node
 @warning_ignore("unused_signal")
 signal internet_allowed
 
-const version : String = "1.0.0"
+const version : String = "0.8.7"
 const SAVE_PATH = "user://installed_versions.json"
 
 var _versions_data: Dictionary = {}
 var _is_internet_allowed: bool = false
 
-func _ready() -> void: load_data()
+func _ready() -> void: 
+	load_data()
+	_cleanup_temp_archives()
 
 # --- setters ---
 
-func set_godot_path(version_name: String, executable_path: String) -> void:
-	if not _versions_data.has(version_name): _versions_data[version_name] = {}
-	_versions_data[version_name]["path"] = executable_path
+func add_engine_version(version_id: String, executable_path: String, engine_name: String = "", icon_path: String = "") -> void:
+	if not _versions_data.has(version_id): _versions_data[version_id] = {}
+	if engine_name.is_empty(): engine_name = "Godot " + version_id
+		
+	_versions_data[version_id]["path"] = executable_path
+	_versions_data[version_id]["name"] = engine_name
+	_versions_data[version_id]["icon"] = icon_path
+	
 	EventBus.godot_installed_version_changed.emit()
 	save_data()
 
@@ -54,6 +61,16 @@ func get_godot_path(version_name: String) -> String:
 		return _versions_data[version_name]["path"]
 	return ""
 
+func get_engine_name(version_id: String) -> String:
+	if _versions_data.has(version_id) and _versions_data[version_id].has("name"):
+		return _versions_data[version_id]["name"]
+	return "Godot " + version_id
+
+func get_engine_icon(version_id: String) -> String:
+	if _versions_data.has(version_id) and _versions_data[version_id].has("icon"):
+		return _versions_data[version_id]["icon"]
+	return ""
+
 func get_all_versions() -> Array: return _versions_data.keys()
 
 func save_data() -> void:
@@ -84,8 +101,10 @@ func load_data() -> void:
 		if root_data is Dictionary:
 			_is_internet_allowed = root_data.get("is_internet_allowed", false)
 			_versions_data = root_data.get("versions", {})
-	else:
-		print("Error parsing: ", json.get_error_message())
+			for v_key in _versions_data.keys():
+				if not _versions_data[v_key].has("name"): _versions_data[v_key]["name"] = "Godot " + v_key
+				if not _versions_data[v_key].has("icon"): _versions_data[v_key]["icon"] = ""
+	else: print("Error parsing: ", json.get_error_message())
 
 func remove_engine_folder(folder_name: String) -> int:
 	EventBus.godot_installed_version_changed.emit()
@@ -105,3 +124,15 @@ func remove_engine_folder(folder_name: String) -> int:
 		item = dir.get_next()
 	dir = null
 	return DirAccess.remove_absolute(full_path)
+
+func _cleanup_temp_archives() -> void:
+	var path: String = "user://engines/"
+	if not DirAccess.dir_exists_absolute(path): return
+	var dir = DirAccess.open(path)
+	if dir:
+		var files = dir.get_files() 
+		for file in files:
+			if file.ends_with(".zip"):
+				var err = dir.remove(file)
+				if err != OK: printerr("ERROR: Can't remove temp archive: ", file)
+				else: print("CLEANER: temp archive has remove: ", file)

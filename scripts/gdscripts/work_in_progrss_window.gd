@@ -1,0 +1,2 @@
+extends Node
+class_name work_in_progress_window

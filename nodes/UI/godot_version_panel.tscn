@@ -2,32 +2,48 @@
 
 [ext_resource type="StyleBox" uid="uid://08qpf6v4ihhn" path="res://src/themes/horityfox/panels/project_panels.tres" id="1_2r1el"]
 [ext_resource type="Texture2D" uid="uid://bx40bofn7yy27" path="res://icon.svg" id="2_aoypn"]
-[ext_resource type="Theme" uid="uid://dg2fsakmvw63" path="res://src/themes/horityfox/buttons/red/red_button.tres" id="3_vrk3i"]
+[ext_resource type="Theme" uid="uid://ikg57vrcper2" path="res://src/themes/horityfox/buttons/remove/remove_basic.tres" id="3_aoypn"]
 [ext_resource type="Texture2D" uid="uid://cualc1sqm0gbo" path="res://src/sprites/bin/bin_logo.svg" id="4_gwg10"]
+[ext_resource type="PackedScene" uid="uid://cumm6idjbbhh7" path="res://nodes/UI/hint.tscn" id="5_aoypn"]
 [ext_resource type="Theme" uid="uid://c06aoxshvcfhh" path="res://src/themes/horityfox/buttons/blue/blue_button.tres" id="5_ompp8"]
+[ext_resource type="Theme" uid="uid://eitks0e7lq6i" path="res://src/themes/horityfox/buttons/yellow/yellow_button.tres" id="7_vrk3i"]
 
 [sub_resource type="GDScript" id="GDScript_2r1el"]
 script/source = "extends panel_base
 
-var _edit_mode : bool = false
-var _version_id : String = \"\"
+var _version_id: String = \"\"
 
-@export var _launch_button : Button
+@export var _launch_button: Button
+@export var _problem_detected_button: Button
+@export var _hint: RichTextLabel
 
 func _ready() -> void:
+	_launch_button.disabled = true
 	_remove_button.hide()
-	EventBus.edit_button_pressed.connect(_edit_mode_enable)
 	_launch_button.pressed.connect(_launch_engine_version)
 	super()
 
-func set_version_id(v_id: String) -> void: _version_id = v_id
+func set_version_id(v_id: String) -> void:
+	_version_id = v_id
+	_check_engine_path()
 
-func _edit_mode_enable() -> void:
-	_edit_mode = !_edit_mode
-	_remove_button.visible = _edit_mode
+func _check_engine_path() -> void:
+	var godot_path = VersionControl.get_godot_path(_version_id)
+	if not godot_path.is_empty() and FileAccess.file_exists(godot_path):
+		if _launch_button: _launch_button.disabled = false
+	else:
+		if _problem_detected_button: 
+			_problem_detected_button.enable(_version_id)
+			set_destroy_icon()
+			set_strikethrough_text()
 
 func remove() -> void:
-	if not _version_id.is_empty(): 
+	if not _version_id.is_empty():
+		var godot_path = VersionControl.get_godot_path(_version_id)
+		if _is_engine_running(godot_path):
+			printerr(\"ERROR: Godot Engine (%s) is running now.\" % _version_id)
+			if _hint: _hint.enable()
+			return 
 		_delete_version_data(_version_id)
 		VersionControl.remove_engine_folder(_version_id)
 	super()
@@ -39,20 +55,74 @@ func _delete_version_data(v_id: String) -> void:
 
 func _launch_engine_version() -> void:
 	var godot_path = VersionControl.get_godot_path(_version_id)
-	if godot_path.is_empty(): return
-	if not FileAccess.file_exists(godot_path): return
-	var pid: int = OS.create_process(godot_path, [])
+	if godot_path.is_empty() or not FileAccess.file_exists(godot_path): return
 	
+	var pid: int = OS.create_process(godot_path, [])
 	if pid > 0: get_tree().quit()
-	else: printerr(\"Error: Godot Engine proccess doesn't started.\")
+	else: printerr(\"Error: Godot Engine process didn't start.\")
+
+func _is_engine_running(exe_path: String) -> bool:
+	if exe_path.is_empty() or not FileAccess.file_exists(exe_path): return false
+	var is_running := false
+	var output := []
+	
+	match OS.get_name():
+		\"Windows\":
+			var win_path = exe_path.replace(\"/\", \"\\\\\")
+			var ps_cmd = \"Get-Process | Where-Object { $_.Path -eq '%s' } | Select-Object -ExpandProperty Id\" % win_path
+			OS.execute(\"powershell.exe\", [\"-Command\", ps_cmd], output)
+			if output.size() > 0 and not output[0].strip_edges().is_empty():
+				is_running = true
+		\"Linux\", \"macOS\", \"FreeBSD\":
+			OS.execute(\"pgrep\", [\"-f\", exe_path], output)
+			if output.size() > 0 and not output[0].strip_edges().is_empty():
+				is_running = true
+	return is_running
 "
 
-[node name="version_1" type="Panel" unique_id=241060482 node_paths=PackedStringArray("_launch_button", "_label_name", "_icon_texture", "_remove_button")]
+[sub_resource type="GDScript" id="GDScript_vrk3i"]
+script/source = "extends Button
+
+var _edit_mode : bool = false
+
+func _ready() -> void:
+	hide()
+	EventBus.edit_button_pressed.connect(_edit_mode_enable)
+
+func _edit_mode_enable() -> void:
+	_edit_mode = !_edit_mode
+	visible = _edit_mode
+"
+
+[sub_resource type="GDScript" id="GDScript_gwg10"]
+script/source = "extends Button
+
+var _id : String = \"\"
+
+func _ready() -> void:
+	hide()
+	_id = \"\"
+
+func _pressed() -> void:
+	EventBus.fix_activate.emit(_id)
+
+func enable(_version_id: String): 
+	_id = _version_id
+	show()
+
+func disable(): 
+	_id = \"\"
+	hide()
+"
+
+[node name="version_1" type="Panel" unique_id=241060482 node_paths=PackedStringArray("_launch_button", "_problem_detected_button", "_hint", "_label_name", "_icon_texture", "_remove_button")]
 custom_minimum_size = Vector2(0, 72)
 theme_override_styles/panel = ExtResource("1_2r1el")
 script = SubResource("GDScript_2r1el")
 _launch_button = NodePath("HBoxContainer/edit_project")
-_label_name = NodePath("HBoxContainer/Label")
+_problem_detected_button = NodePath("HBoxContainer/problem_detected_button")
+_hint = NodePath("HBoxContainer/remove_project/hint")
+_label_name = NodePath("HBoxContainer/RichLabelText")
 _icon_texture = NodePath("HBoxContainer/icon")
 _remove_button = NodePath("HBoxContainer/remove_project")
 
@@ -77,20 +147,21 @@ texture = ExtResource("2_aoypn")
 expand_mode = 4
 stretch_mode = 5
 
-[node name="Label" type="Label" parent="HBoxContainer" unique_id=623955403]
+[node name="RichLabelText" type="RichTextLabel" parent="HBoxContainer" unique_id=703992061]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 14
-text = "Godot engine 4.6.1"
-clip_text = true
+bbcode_enabled = true
+text = "[s]Godot engine 4.6.1[/s]"
+vertical_alignment = 1
 
 [node name="remove_project" type="Button" parent="HBoxContainer" unique_id=1147381352]
 custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
 size_flags_vertical = 4
-theme = ExtResource("3_vrk3i")
+theme = ExtResource("3_aoypn")
 theme_override_font_sizes/font_size = 14
 text = "  "
+script = SubResource("GDScript_vrk3i")
 
 [node name="icon" type="TextureRect" parent="HBoxContainer/remove_project" unique_id=815318469]
 layout_mode = 1
@@ -108,10 +179,31 @@ texture = ExtResource("4_gwg10")
 expand_mode = 2
 stretch_mode = 5
 
+[node name="hint" parent="HBoxContainer/remove_project" unique_id=785299516 instance=ExtResource("5_aoypn")]
+visible = false
+layout_mode = 1
+offset_top = -15.0
+offset_bottom = 13.0
+grow_vertical = 2
+_display_time = 3.0
+
 [node name="edit_project" type="Button" parent="HBoxContainer" unique_id=1341672522]
 custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
 size_flags_vertical = 4
 theme = ExtResource("5_ompp8")
 theme_override_font_sizes/font_size = 14
+disabled = true
 text = "Запустить"
+
+[node name="problem_detected_button" type="Button" parent="HBoxContainer" unique_id=1001502169]
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+size_flags_vertical = 4
+theme = ExtResource("7_vrk3i")
+theme_override_font_sizes/font_size = 14
+text = " ! "
+script = SubResource("GDScript_gwg10")
+
+[node name="spacer" type="Control" parent="HBoxContainer" unique_id=166040111]
+layout_mode = 2
