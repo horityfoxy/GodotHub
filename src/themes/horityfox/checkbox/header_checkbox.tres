@@ -1,0 +1,8 @@
+[gd_resource type="Theme" format=3 uid="uid://c3h7ju0ypldpu"]
+
+[ext_resource type="FontFile" uid="uid://crxptqsk1pq64" path="res://src/fonts/LINESeedJP/LINESeedJP-Bold.ttf" id="1_5hk8f"]
+
+[resource]
+default_font_size = 14
+CheckBox/font_sizes/font_size = 12
+CheckBox/fonts/font = ExtResource("1_5hk8f")

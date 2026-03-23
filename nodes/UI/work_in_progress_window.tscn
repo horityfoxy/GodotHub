@@ -1,0 +1,51 @@
+[gd_scene format=3 uid="uid://qi7f60i7f20r"]
+
+[ext_resource type="StyleBox" uid="uid://ofvwt233h2oo" path="res://src/themes/horityfox/panels/work_in_progress_window.tres" id="1_2qnqv"]
+[ext_resource type="Script" uid="uid://bp13qb0tcix88" path="res://scripts/gdscripts/work_in_progrss_window.gd" id="1_otwfg"]
+[ext_resource type="Theme" uid="uid://cub5rlhj3taf7" path="res://src/themes/horityfox/progress_bar/download_bar.tres" id="2_otwfg"]
+
+[node name="work_in_progress_window" type="Control" unique_id=326723135]
+layout_mode = 3
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -228.0
+offset_right = 228.00012
+offset_bottom = 83.0
+grow_horizontal = 2
+script = ExtResource("1_otwfg")
+
+[node name="Panel" type="Panel" parent="." unique_id=1547805574]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = ExtResource("1_2qnqv")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Panel" unique_id=1598695620]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 15.0
+offset_top = 12.0
+offset_right = -15.0
+offset_bottom = -12.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="Label" type="Label" parent="Panel/VBoxContainer" unique_id=1611337626]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.851769, 0.8517689, 0.85176885, 1)
+text = "В процессе..."
+
+[node name="ProgressBar" type="ProgressBar" parent="Panel/VBoxContainer" unique_id=713747719]
+layout_mode = 2
+theme = ExtResource("2_otwfg")
+step = 1.0
+value = 61.0
+show_percentage = false

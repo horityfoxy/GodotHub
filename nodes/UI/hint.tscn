@@ -1,0 +1,85 @@
+[gd_scene format=3 uid="uid://cumm6idjbbhh7"]
+
+[ext_resource type="StyleBox" uid="uid://b3bxkcid3aveb" path="res://src/themes/horityfox/panels/attantion_window.tres" id="1_qbq16"]
+[ext_resource type="Theme" uid="uid://bngida3pccgox" path="res://src/themes/horityfox/richlabeltext/attantion_window.tres" id="1_syapq"]
+
+[sub_resource type="GDScript" id="GDScript_aoypn"]
+script/source = "extends RichTextLabel
+
+@export var _display_time : float = 1.0
+@export var _tween_duration : float = 0.3
+
+var _active_tween : Tween = null
+var _is_active : bool = false
+
+@onready var _original_scale : Vector2 = scale
+
+func _ready() -> void:
+	hide()
+	modulate.a = 0.0 
+	pivot_offset = Vector2(size.x, size.y / 2)
+	resized.connect(_on_resized)
+
+func _on_resized() -> void: pivot_offset = Vector2(size.x, size.y / 2)
+
+func enable() -> void:
+	_is_active = true
+	if _active_tween and _active_tween.is_valid(): _active_tween.kill()
+	show()
+	_on_resized()
+	
+	_active_tween = create_tween().set_parallel(true)
+	_active_tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	_active_tween.tween_property(self, \"scale\", _original_scale, _tween_duration)
+	_active_tween.tween_property(self, \"modulate:a\", 1.0, _tween_duration)
+	var hide_chain = create_tween()
+	_active_tween.chain()
+	hide_chain.tween_interval(_display_time)
+	hide_chain.tween_callback(disable.bind(false))
+
+func disable(force_hide: bool = false) -> void:
+	if not _is_active and not force_hide: return
+	_is_active = false
+	if _active_tween and _active_tween.is_valid(): _active_tween.kill()
+	if force_hide:
+		hide()
+		modulate.a = 0.0
+		scale = Vector2.ZERO
+		return
+	_active_tween = create_tween().set_parallel(true)
+	_active_tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	_active_tween.tween_property(self, \"scale\", Vector2.ZERO, _tween_duration)
+	_active_tween.tween_property(self, \"modulate:a\", 0.0, _tween_duration)
+	_active_tween.chain().tween_callback(hide)
+"
+
+[node name="hint" type="RichTextLabel" unique_id=820097050]
+z_index = 1
+clip_contents = false
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = -142.5
+offset_top = -14.0
+offset_right = -12.0
+offset_bottom = 14.0
+theme = ExtResource("1_syapq")
+bbcode_enabled = true
+text = "[b]Ошибка удаления[/b]
+Движок запущен"
+fit_content = true
+scroll_active = false
+horizontal_alignment = 1
+vertical_alignment = 1
+script = SubResource("GDScript_aoypn")
+
+[node name="bg" type="Panel" parent="." unique_id=419631503]
+z_index = -1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_bottom = 2.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = ExtResource("1_qbq16")

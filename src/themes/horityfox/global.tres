@@ -4,11 +4,10 @@
 [ext_resource type="FontFile" uid="uid://crxptqsk1pq64" path="res://src/fonts/LINESeedJP/LINESeedJP-Bold.ttf" id="1_d1tmk"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_d1tmk"]
-expand_margin_left = 2.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_17afw"]
+content_margin_left = 2.0
 bg_color = Color(0.29586652, 0.2958665, 0.2958665, 1)
-expand_margin_left = 2.0
 
 [resource]
 Button/fonts/font = ExtResource("1_bvxlg")
@@ -19,5 +18,6 @@ RichTextLabel/font_sizes/bold_font_size = 13
 RichTextLabel/font_sizes/normal_font_size = 13
 RichTextLabel/fonts/bold_font = ExtResource("1_d1tmk")
 RichTextLabel/fonts/normal_font = ExtResource("1_bvxlg")
+ScrollContainer/constants/scrollbar_h_separation = 8
 VScrollBar/styles/grabber = SubResource("StyleBoxFlat_d1tmk")
 VScrollBar/styles/scroll = SubResource("StyleBoxFlat_17afw")

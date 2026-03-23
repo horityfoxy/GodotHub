@@ -5,10 +5,11 @@
 [ext_resource type="Texture2D" uid="uid://e7wkwvbepdoa" path="res://src/sprites/drag_and_drop/drag_and_drop_icon.svg" id="3_u3hnx"]
 [ext_resource type="StyleBox" uid="uid://u521iyx6gro2" path="res://src/themes/horityfox/tags/version_tag.tres" id="4_e77bd"]
 [ext_resource type="PackedScene" uid="uid://c4dcycfjtp4yh" path="res://nodes/UI/tag_project.tscn" id="4_ogak0"]
-[ext_resource type="Theme" uid="uid://dg2fsakmvw63" path="res://src/themes/horityfox/buttons/red/red_button.tres" id="4_u3hnx"]
 [ext_resource type="Texture2D" uid="uid://cualc1sqm0gbo" path="res://src/sprites/bin/bin_logo.svg" id="5_g1chl"]
 [ext_resource type="Theme" uid="uid://bme18nb43kckb" path="res://src/themes/horityfox/buttons/gray/gray_button.tres" id="5_u3hnx"]
 [ext_resource type="Theme" uid="uid://c06aoxshvcfhh" path="res://src/themes/horityfox/buttons/blue/blue_button.tres" id="6_x0pa5"]
+[ext_resource type="Theme" uid="uid://ikg57vrcper2" path="res://src/themes/horityfox/buttons/remove/remove_basic.tres" id="7_e77bd"]
+[ext_resource type="PackedScene" uid="uid://bbyc6kphmjldi" path="res://nodes/UI/problem_detected_button.tscn" id="10_mid5l"]
 
 [sub_resource type="GDScript" id="GDScript_uyqn0"]
 script/source = "extends panel_base
@@ -17,6 +18,7 @@ script/source = "extends panel_base
 @export var _run_button : Button
 @export var _version_label : Label
 @export var _tags_zones : HBoxContainer
+@export var _problem_detected_button: Button
 
 var _project_path : String = \"\"
 var _godot_path : String = \"\"
@@ -29,8 +31,16 @@ func _ready() -> void:
 	EventBus.edit_button_pressed.connect(_edit_mode_enable)
 	EventBus.version_update.connect(_update_godot_path)
 	
+	#_problem_detected_button.enable(_project_id, false)
+	
 	_tags_zones._set_id(_get_id())
 	super()
+
+func set_missing_state() -> void:
+	if _edit_button: _edit_button.disabled = true
+	if _run_button: _run_button.disabled = true
+	if _problem_detected_button: _problem_detected_button.enable(_project_id, false)
+	set_strikethrough_text()
 
 func set_version(value : String) -> void:
 	_version = value
@@ -153,7 +163,7 @@ func load_tag():
 	_show_create_tag_button()
 "
 
-[node name="project_1" type="Panel" unique_id=426653167 node_paths=PackedStringArray("_edit_button", "_run_button", "_version_label", "_tags_zones", "_label_name", "_icon_texture", "_remove_button")]
+[node name="project_1" type="Panel" unique_id=426653167 node_paths=PackedStringArray("_edit_button", "_run_button", "_version_label", "_tags_zones", "_problem_detected_button", "_label_name", "_icon_texture", "_remove_button")]
 custom_minimum_size = Vector2(0, 72)
 theme_override_styles/panel = ExtResource("1_c0s5n")
 script = SubResource("GDScript_uyqn0")
@@ -161,6 +171,7 @@ _edit_button = NodePath("HBoxContainer/edit_project")
 _run_button = NodePath("HBoxContainer/run_project")
 _version_label = NodePath("HBoxContainer/name_and_tags/tags/version")
 _tags_zones = NodePath("HBoxContainer/name_and_tags/tags")
+_problem_detected_button = NodePath("HBoxContainer/problem_detected_button")
 _label_name = NodePath("HBoxContainer/name_and_tags/name")
 _icon_texture = NodePath("HBoxContainer/icon")
 _remove_button = NodePath("HBoxContainer/remove_project")
@@ -206,12 +217,15 @@ layout_mode = 2
 size_flags_horizontal = 3
 alignment = 1
 
-[node name="name" type="Label" parent="HBoxContainer/name_and_tags" unique_id=541838067]
+[node name="name" type="RichTextLabel" parent="HBoxContainer/name_and_tags" unique_id=1621410513]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 14
-text = "Какой-то проект #1"
-clip_text = true
+focus_mode = 2
+bbcode_enabled = true
+text = "Some project #1"
+fit_content = true
+vertical_alignment = 1
+selection_enabled = true
 
 [node name="tags" type="HBoxContainer" parent="HBoxContainer/name_and_tags" unique_id=538267628 node_paths=PackedStringArray("_new_tag_button")]
 layout_mode = 2
@@ -253,7 +267,7 @@ text = "+"
 custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
 size_flags_vertical = 4
-theme = ExtResource("4_u3hnx")
+theme = ExtResource("7_e77bd")
 theme_override_font_sizes/font_size = 14
 text = "  "
 
@@ -285,4 +299,11 @@ layout_mode = 2
 size_flags_vertical = 4
 theme = ExtResource("6_x0pa5")
 theme_override_font_sizes/font_size = 14
+disabled = true
 text = "Редактировать"
+
+[node name="problem_detected_button" parent="HBoxContainer" unique_id=1963035364 instance=ExtResource("10_mid5l")]
+layout_mode = 2
+
+[node name="spacer" type="Control" parent="HBoxContainer" unique_id=1183382990]
+layout_mode = 2

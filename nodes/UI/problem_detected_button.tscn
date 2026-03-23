@@ -1,0 +1,34 @@
+[gd_scene format=3 uid="uid://bbyc6kphmjldi"]
+
+[ext_resource type="Theme" uid="uid://eitks0e7lq6i" path="res://src/themes/horityfox/buttons/yellow/yellow_button.tres" id="1_c2jec"]
+
+[sub_resource type="GDScript" id="GDScript_gwg10"]
+script/source = "extends Button
+
+var _id : String = \"\"
+var _is_engine_fix : bool = false
+
+func _ready() -> void:
+	hide()
+	_id = \"\"
+
+func _pressed() -> void:
+	EventBus.fix_path_activate.emit(_id, _is_engine_fix)
+
+func enable(_version_id: String, _engine_mode : bool): 
+	_id = _version_id
+	_is_engine_fix = _engine_mode
+	show()
+
+func disable(): 
+	_id = \"\"
+	hide()
+"
+
+[node name="problem_detected_button" type="Button" unique_id=1963035364]
+custom_minimum_size = Vector2(0, 24)
+size_flags_vertical = 4
+theme = ExtResource("1_c2jec")
+theme_override_font_sizes/font_size = 14
+text = " ! "
+script = SubResource("GDScript_gwg10")
