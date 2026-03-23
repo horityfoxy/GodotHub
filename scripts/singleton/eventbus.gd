@@ -30,6 +30,10 @@ signal version_update
 @warning_ignore("unused_signal")
 signal godot_installed_version_changed
 
+## PROJECTS SIGNALS ##
+@warning_ignore("unused_signal")
+signal ui_project_list_updated
+
 ## PATH FIX SIGNALS ##
 @warning_ignore("unused_signal")
-signal fix_activate(id : String)
+signal fix_path_activate(id : String, is_engine_mode)

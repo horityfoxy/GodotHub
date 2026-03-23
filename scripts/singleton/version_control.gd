@@ -3,7 +3,7 @@ extends Node
 @warning_ignore("unused_signal")
 signal internet_allowed
 
-const version : String = "0.8.7"
+const version : String = "0.9.2"
 const SAVE_PATH = "user://installed_versions.json"
 
 var _versions_data: Dictionary = {}

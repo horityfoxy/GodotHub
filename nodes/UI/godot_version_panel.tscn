@@ -6,7 +6,7 @@
 [ext_resource type="Texture2D" uid="uid://cualc1sqm0gbo" path="res://src/sprites/bin/bin_logo.svg" id="4_gwg10"]
 [ext_resource type="PackedScene" uid="uid://cumm6idjbbhh7" path="res://nodes/UI/hint.tscn" id="5_aoypn"]
 [ext_resource type="Theme" uid="uid://c06aoxshvcfhh" path="res://src/themes/horityfox/buttons/blue/blue_button.tres" id="5_ompp8"]
-[ext_resource type="Theme" uid="uid://eitks0e7lq6i" path="res://src/themes/horityfox/buttons/yellow/yellow_button.tres" id="7_vrk3i"]
+[ext_resource type="PackedScene" uid="uid://bbyc6kphmjldi" path="res://nodes/UI/problem_detected_button.tscn" id="7_vrk3i"]
 
 [sub_resource type="GDScript" id="GDScript_2r1el"]
 script/source = "extends panel_base
@@ -33,7 +33,7 @@ func _check_engine_path() -> void:
 		if _launch_button: _launch_button.disabled = false
 	else:
 		if _problem_detected_button: 
-			_problem_detected_button.enable(_version_id)
+			_problem_detected_button.enable(_version_id, true)
 			set_destroy_icon()
 			set_strikethrough_text()
 
@@ -71,12 +71,10 @@ func _is_engine_running(exe_path: String) -> bool:
 			var win_path = exe_path.replace(\"/\", \"\\\\\")
 			var ps_cmd = \"Get-Process | Where-Object { $_.Path -eq '%s' } | Select-Object -ExpandProperty Id\" % win_path
 			OS.execute(\"powershell.exe\", [\"-Command\", ps_cmd], output)
-			if output.size() > 0 and not output[0].strip_edges().is_empty():
-				is_running = true
+			if output.size() > 0 and not output[0].strip_edges().is_empty(): is_running = true
 		\"Linux\", \"macOS\", \"FreeBSD\":
 			OS.execute(\"pgrep\", [\"-f\", exe_path], output)
-			if output.size() > 0 and not output[0].strip_edges().is_empty():
-				is_running = true
+			if output.size() > 0 and not output[0].strip_edges().is_empty(): is_running = true
 	return is_running
 "
 
@@ -94,33 +92,11 @@ func _edit_mode_enable() -> void:
 	visible = _edit_mode
 "
 
-[sub_resource type="GDScript" id="GDScript_gwg10"]
-script/source = "extends Button
-
-var _id : String = \"\"
-
-func _ready() -> void:
-	hide()
-	_id = \"\"
-
-func _pressed() -> void:
-	EventBus.fix_activate.emit(_id)
-
-func enable(_version_id: String): 
-	_id = _version_id
-	show()
-
-func disable(): 
-	_id = \"\"
-	hide()
-"
-
-[node name="version_1" type="Panel" unique_id=241060482 node_paths=PackedStringArray("_launch_button", "_problem_detected_button", "_hint", "_label_name", "_icon_texture", "_remove_button")]
+[node name="version_1" type="Panel" unique_id=241060482 node_paths=PackedStringArray("_launch_button", "_hint", "_label_name", "_icon_texture", "_remove_button")]
 custom_minimum_size = Vector2(0, 72)
 theme_override_styles/panel = ExtResource("1_2r1el")
 script = SubResource("GDScript_2r1el")
 _launch_button = NodePath("HBoxContainer/edit_project")
-_problem_detected_button = NodePath("HBoxContainer/problem_detected_button")
 _hint = NodePath("HBoxContainer/remove_project/hint")
 _label_name = NodePath("HBoxContainer/RichLabelText")
 _icon_texture = NodePath("HBoxContainer/icon")
@@ -196,14 +172,8 @@ theme_override_font_sizes/font_size = 14
 disabled = true
 text = "Запустить"
 
-[node name="problem_detected_button" type="Button" parent="HBoxContainer" unique_id=1001502169]
-custom_minimum_size = Vector2(0, 24)
+[node name="problem_detected_button" parent="HBoxContainer" unique_id=1963035364 instance=ExtResource("7_vrk3i")]
 layout_mode = 2
-size_flags_vertical = 4
-theme = ExtResource("7_vrk3i")
-theme_override_font_sizes/font_size = 14
-text = " ! "
-script = SubResource("GDScript_gwg10")
 
 [node name="spacer" type="Control" parent="HBoxContainer" unique_id=166040111]
 layout_mode = 2

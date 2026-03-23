@@ -2,21 +2,27 @@ extends Node
 
 const SAVE_PATH = "user://projects_list.json"
 
-# data format: { "ID": { "path": "", "icon_override": "", "tags": [] } }
+# data format: { "ID": { "path": "", "name": "", "icon_override": "", "tags": [] } }
 var _projects_data: Dictionary = {}
 
 func _ready() -> void: load_projects()
 
-func add_project(path: String) -> void:
+func add_project(path: String, project_name: String = "Unnamed Project") -> void:
 	var clean_path = path.replace("\\", "/").simplify_path()
 	var project_id = str(clean_path.hash())
 	
 	if not _projects_data.has(project_id):
 		_projects_data[project_id] = {
 			"path": clean_path,
+			"name": project_name,
 			"icon_override": "",
 			"tags": []
 		}
+		save_projects()
+
+func update_project_name(project_id: String, new_name: String) -> void:
+	if _projects_data.has(project_id) and _projects_data[project_id].get("name") != new_name:
+		_projects_data[project_id]["name"] = new_name
 		save_projects()
 
 func remove_project(project_id: String) -> void:
@@ -38,6 +44,9 @@ func get_project_by_id(project_id: String) -> Dictionary:
 func get_project_tags(project_id: String) -> Array:
 	var project = get_project_by_id(project_id)
 	return project.get("tags", [])
+
+func get_project_name(project_id: String) -> String:
+	return _projects_data.get(project_id, {}).get("name", "Unnamed Project")
 
 # --- setters ---
 
@@ -93,3 +102,17 @@ func load_projects() -> void:
 	else:
 		printerr("Error parcing of JSON: ", json.get_error_message())
 	file.close()
+
+func update_project_path(old_id: String, new_file_path: String) -> void:
+	if not _projects_data.has(old_id): return
+	var clean_path = new_file_path.replace("\\", "/").simplify_path()
+	var new_id = str(clean_path.hash())
+	
+	if old_id != new_id:
+		var project_data = _projects_data[old_id].duplicate(true)
+		project_data["path"] = clean_path
+		_projects_data[new_id] = project_data
+		_projects_data.erase(old_id)
+	else: _projects_data[old_id]["path"] = clean_path
+		
+	save_projects()

@@ -119,23 +119,19 @@ script/source = "extends Control
 @export var _project_list : VBoxContainer
 
 func _ready() -> void:
-	_hint.show()
-	_project_list.hide()
-	add_project_button.pressed.connect(EventBus.drag_and_drop_window_enable.emit)
-	EventBus.project_found.connect(_hide_hint)
-	EventBus.project_removed.connect(_is_hint_avaible)
+	add_project_button.pressed.connect(func(): EventBus.drag_and_drop_window_enable.emit())
+	EventBus.ui_project_list_updated.connect(_check_visibility)
+	EventBus.project_removed.connect(_check_visibility)
+	EventBus.project_found.connect(func(_path): _check_visibility())
+	_check_visibility()
 
-@warning_ignore(\"unused_parameter\")
-func _hide_hint(value: String = \"\"):
-	_hint.hide()
-	_project_list.show()
-
-func _hint_enable():
-	_hint.show()
-	_project_list.hide()
-
-func _is_hint_avaible():
-	if _project_list.get_child_count() == 1: _hint_enable()
+func _check_visibility() -> void:
+	if SaveSystem.get_all_projects().size() > 0 or _project_list.get_child_count() > 1:
+		_hint.hide()
+		_project_list.show()
+	else:
+		_hint.show()
+		_project_list.hide()
 "
 
 [sub_resource type="GDScript" id="GDScript_2toya"]
@@ -147,6 +143,7 @@ script/source = "extends VBoxContainer
 func _ready() -> void:
 	EventBus.project_found.connect(_on_project_found)
 	_load_existing_projects()
+	EventBus.ui_project_list_updated.connect(_load_existing_projects)
 
 func _on_project_found(project_file_path: String) -> void:
 	var clean_path = project_file_path.simplify_path()
@@ -157,6 +154,7 @@ func _on_project_found(project_file_path: String) -> void:
 
 func _load_existing_projects() -> void:
 	var all_projects = SaveSystem.get_all_projects()
+	for child in get_children(): if child is panel_base: child.queue_free()
 	for project_id in all_projects: _create_panel(project_id)
 
 ## Spawn project panel
@@ -164,22 +162,23 @@ func _create_panel(project_id: String) -> void:
 	var data = SaveSystem.get_project_by_id(project_id)
 	if data.is_empty(): return
 	var full_path = data[\"path\"]
-	if not FileAccess.file_exists(full_path):
-		printerr(\"Project not found: \", full_path)
-		return
+	var is_missing = not FileAccess.file_exists(full_path)
 	
-	var config = ConfigFile.new()
-	var err = config.load(full_path)
-	if err != OK: return
-	
-	var p_name = config.get_value(\"application\", \"config/name\", \"Unnamed Project\")
+	var p_name = data.get(\"name\", \"Unnamed Project\") 
 	var p_dir = full_path.get_base_dir()
-	var p_version = _extract_version(config)
+	var p_version = \"Unknown\"
+	if not is_missing:
+		var config = ConfigFile.new()
+		if config.load(full_path) == OK:
+			p_name = config.get_value(\"application\", \"config/name\", \"Unnamed Project\")
+			p_version = _extract_version(config)
+			SaveSystem.update_project_name(project_id, p_name)
 	
 	var panel = project_panel_scene.instantiate()
 	add_child(panel)
 	var target_index = max(0, get_child_count() - 2)
 	move_child(panel, target_index)
+	
 	panel.set_text(p_name)
 	panel.set_project_path(p_dir)
 	panel.set_version(p_version)
@@ -188,7 +187,7 @@ func _create_panel(project_id: String) -> void:
 	
 	if panel.has_method(\"setup_project_data\"): panel.setup_project_data(project_id, data)
 	else: panel.setup_icon()
-	EventBus.project_found.emit.call_deferred()
+	if is_missing and panel.has_method(\"set_missing_state\"): panel.set_missing_state()
 
 func _extract_version(config: ConfigFile) -> String:
 	if config.has_section_key(\"application\", \"config/features\"):
@@ -269,11 +268,11 @@ func _ready() -> void:
 	EventBus.settings_window_enable.connect(enable_settings)
 	EventBus.drag_and_drop_window_enable.connect(enable_drag_and_drop)
 	EventBus.godot_engine_download_window_enable.connect(enable_get_engine_version)
-	EventBus.fix_activate.connect(enable_fix_path_window)
+	EventBus.fix_path_activate.connect(enable_fix_path_window)
 
-func enable_fix_path_window(_id : String):
+func enable_fix_path_window(_id : String, is_engine_mode : bool):
 	enable()
-	_fix_path_window.setup_fix_engine_window(_id)
+	_fix_path_window.setup_fix_window(_id, is_engine_mode)
 
 func enable_get_engine_version() -> void:
 	enable()
@@ -1014,9 +1013,6 @@ func _setup_file_dialog() -> void:
 	_file_dialog = FileDialog.new()
 	_file_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
 	_file_dialog.access = FileDialog.ACCESS_FILESYSTEM
-	
-	if OS.get_name() == \"Windows\": _file_dialog.add_filter(\"*.exe\", \"Исполняемые файлы Godot\")
-	elif OS.get_name() == \"macOS\": _file_dialog.add_filter(\"*.app\", \"Приложения Godot\")
 	if \"use_native_dialog\" in _file_dialog: _file_dialog.set(\"use_native_dialog\", true)
 	
 	_file_dialog.file_selected.connect(_on_file_selected)
@@ -1032,7 +1028,7 @@ func _set_engine_path_error_text() -> void:
 func _set_project_path_error_text() -> void:
 	_error_description.modulate = Color.WHITE
 	_error_description.text = \"Похоже файлы вашего проекта были перемещены или удалены. Пожалуйста, укажите путь к вашему проекту.\"
-	_path_hint.text = \".../\" + id
+	_path_hint.text = \".../\" + SaveSystem.get_project_name(id)
 
 func enable() -> void: show()
 
@@ -1042,11 +1038,15 @@ func disable() -> void:
 	close_window.emit()
 
 func _fix() -> void:
+	_file_dialog.clear_filters()
+	
 	if _is_engine_mode: 
-		_file_dialog.popup_centered_ratio(0.5)
-		_disable_buttons(true)
-	else:
-		pass
+		if OS.get_name() == \"Windows\": _file_dialog.add_filter(\"*.exe\", \"Исполняемые файлы Godot\")
+		elif OS.get_name() == \"macOS\": _file_dialog.add_filter(\"*.app\", \"Приложения Godot\")
+	else: _file_dialog.add_filter(\"project.godot\", \"Файл проекта Godot\")
+		
+	_file_dialog.popup_centered_ratio(0.5)
+	_disable_buttons(true)
 
 func _disable_buttons(value : bool) -> void:
 	_fix_button.disabled = value
@@ -1061,10 +1061,30 @@ func _on_file_selected(path: String) -> void:
 			var current_name = VersionControl.get_engine_name(id)
 			var current_icon = VersionControl.get_engine_icon(id)
 			VersionControl.add_engine_version(id, path, current_name, current_icon)
-			EventBus.version_update.emit() 
+			EventBus.version_update.emit()
 			disable()
 		else:
 			_error_description.text = \"Ошибка: Файл не является движком Godot версии \" + id + \".\\nПожалуйста, выберите корректный файл.\"
+			_error_description.modulate = Color.RED
+			_disable_buttons(false)
+	else:
+		var expected_name: String = SaveSystem.get_project_by_id(id).get(\"name\", \"\")
+		var config := ConfigFile.new()
+		
+		if config.load(path) == OK:
+			var selected_name: String = config.get_value(\"application\", \"config/name\", \"\")
+			if selected_name == expected_name or expected_name == \"\" or expected_name == \"Unnamed Project\":
+				SaveSystem.update_project_path(id, path)
+				_disable_buttons(false)
+				disable()
+				EventBus.ui_project_list_updated.emit()
+				
+			else:
+				_error_description.text = \"Ошибка: Выбран проект «\" + selected_name + \"», а ожидался «\" + expected_name + \"».\"
+				_error_description.modulate = Color.RED
+				_disable_buttons(false)
+		else:
+			_error_description.text = \"Ошибка: Не удалось прочитать выбранный файл project.godot.\"
 			_error_description.modulate = Color.RED
 			_disable_buttons(false)
 
@@ -1090,16 +1110,12 @@ func _verify_engine_version(path: String, expected_id: String) -> bool:
 	var base_id: String = expected_id.get_slice(\"-\", 0).replace(\"v\", \"\")
 	return version_output.begins_with(base_id)
 
-func setup_fix_engine_window(engine_id : String) -> void:
+func setup_fix_window(engine_id : String, is_engine_mode : bool) -> void:
 	id = engine_id
-	_is_engine_mode = true
-	_set_engine_path_error_text()
-	enable()
-
-func setup_fix_project_window(project_id : String) -> void:
-	id = project_id
-	_is_engine_mode = false
-	_set_project_path_error_text()
+	_error_description.modulate = Color.WHITE
+	_is_engine_mode = is_engine_mode
+	if _is_engine_mode: _set_engine_path_error_text()
+	else: _set_project_path_error_text()
 	enable()
 "
 
