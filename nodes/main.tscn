@@ -41,14 +41,17 @@ func _ready() -> void:
 	_varsions_button.pressed.connect(_versions_enable)
 
 func _edit_mode():
+	EventBus.activate_window_or_switch.emit()
 	EventBus.edit_button_pressed.emit()
 
 func _projects_enable():
+	EventBus.activate_window_or_switch.emit()
 	EventBus.switch_window_body.emit(\"projects\")
 	_projects_button.button_pressed = true
 	_varsions_button.button_pressed = false
 
 func _versions_enable():
+	EventBus.activate_window_or_switch.emit()
 	EventBus.switch_window_body.emit(\"versions\")
 	_varsions_button.button_pressed = true
 	_projects_button.button_pressed = false
@@ -272,13 +275,17 @@ script/source = "extends Control
 @export var _settings_window : Control
 @export var _get_new_version_window : Control
 @export var _fix_path_window : Control
+@export var _swich_project_version : Control
 
 func _ready() -> void:
 	hide()
+	
 	_settings_window.close_window.connect(disable)
 	_drag_and_drop_window.close_window.connect(disable)
 	_get_new_version_window.close_window.connect(disable)
 	_fix_path_window.close_window.connect(disable)
+	_swich_project_version.close_window.connect(disable)
+	
 	EventBus.settings_window_enable.connect(enable_settings)
 	EventBus.drag_and_drop_window_enable.connect(enable_drag_and_drop)
 	EventBus.godot_engine_download_window_enable.connect(enable_get_engine_version)
@@ -308,6 +315,7 @@ func disable_windows() -> void:
 	_settings_window.disable()
 	_get_new_version_window.disable()
 	_fix_path_window.disable()
+	_swich_project_version.disable()
 
 func disable_blur() -> void:
 	_blur.disable()
@@ -317,6 +325,7 @@ func disable_all() -> void:
 	disable_blur()
 
 func enable() -> void:
+	EventBus.activate_window_or_switch.emit()
 	show()
 
 func disable() -> void:
@@ -1213,6 +1222,18 @@ func setup_fix_window(engine_id : String, is_engine_mode : bool) -> void:
 	enable()
 "
 
+[sub_resource type="GDScript" id="GDScript_sncrj"]
+script/source = "extends Control
+
+signal close_window
+
+func enable() -> void:
+	show()
+
+func disable() -> void:
+	hide()
+"
+
 [node name="main" type="CanvasLayer" unique_id=2071414279]
 
 [node name="background_color" type="ColorRect" parent="." unique_id=1187307622]
@@ -1546,7 +1567,6 @@ horizontal_alignment = 1
 uppercase = true
 
 [node name="popup_window" type="Control" parent="." unique_id=182114234 node_paths=PackedStringArray("_blur", "_drag_and_drop_window", "_settings_window", "_get_new_version_window", "_fix_path_window")]
-visible = false
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -2492,6 +2512,184 @@ theme_override_font_sizes/font_size = 14
 text = "Указать"
 
 [node name="spacer2" type="Control" parent="popup_window/fix_broken_path/Panel/VBoxContainer" unique_id=1291606563]
+layout_mode = 2
+
+[node name="swich_project_version" type="Control" parent="popup_window" unique_id=1454549127]
+z_index = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = SubResource("GDScript_sncrj")
+
+[node name="attantion_window" type="Panel" parent="popup_window/swich_project_version" unique_id=1998262722]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -72.0
+offset_right = 300.0
+offset_bottom = 72.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = ExtResource("18_1n1q0")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="popup_window/swich_project_version/attantion_window" unique_id=1338453147]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 13.0
+offset_top = 1.0
+offset_right = -13.0
+offset_bottom = -1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 12
+
+[node name="spacer" type="Control" parent="popup_window/swich_project_version/attantion_window/VBoxContainer" unique_id=1290793429]
+layout_mode = 2
+
+[node name="header" type="Label" parent="popup_window/swich_project_version/attantion_window/VBoxContainer" unique_id=1095456662]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("10_h0f1k")
+theme_override_font_sizes/font_size = 16
+text = "Обратите внимание"
+
+[node name="error_description" type="Label" parent="popup_window/swich_project_version/attantion_window/VBoxContainer" unique_id=247184115]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_vertical = 3
+text = "Перевод проекта на иную версию может повлечь проблемы. Делайте все на свой страх и риск и имейте при себе резервную копию проекта!"
+autowrap_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="popup_window/swich_project_version/attantion_window/VBoxContainer" unique_id=444944940]
+layout_mode = 2
+alignment = 1
+
+[node name="path_hint" type="Label" parent="popup_window/swich_project_version/attantion_window/VBoxContainer/HBoxContainer" unique_id=1984492768]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.52906674, 0.5290667, 0.5290667, 1)
+theme_override_fonts/font = ExtResource("16_ecu0m")
+theme_override_font_sizes/font_size = 10
+text = ".../Project_name"
+
+[node name="spacer" type="Control" parent="popup_window/swich_project_version/attantion_window/VBoxContainer/HBoxContainer" unique_id=1198497492]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="close" type="Button" parent="popup_window/swich_project_version/attantion_window/VBoxContainer/HBoxContainer" unique_id=1703183916]
+layout_mode = 2
+theme = ExtResource("8_t4bcl")
+theme_override_font_sizes/font_size = 14
+text = "Закрыть"
+
+[node name="next" type="Button" parent="popup_window/swich_project_version/attantion_window/VBoxContainer/HBoxContainer" unique_id=243841409]
+layout_mode = 2
+theme = ExtResource("8_t4bcl")
+theme_override_font_sizes/font_size = 14
+text = "Далее"
+
+[node name="fix" type="Button" parent="popup_window/swich_project_version/attantion_window/VBoxContainer/HBoxContainer" unique_id=1129048549]
+layout_mode = 2
+theme = ExtResource("8_c3m70")
+theme_override_font_sizes/font_size = 14
+text = "Резервная копия"
+
+[node name="spacer2" type="Control" parent="popup_window/swich_project_version/attantion_window/VBoxContainer" unique_id=1169234214]
+layout_mode = 2
+
+[node name="chosing_another_version_window" type="Panel" parent="popup_window/swich_project_version" unique_id=640841798]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -72.0
+offset_right = 300.0
+offset_bottom = 72.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = ExtResource("18_1n1q0")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="popup_window/swich_project_version/chosing_another_version_window" unique_id=1681213680]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 13.0
+offset_top = 1.0
+offset_right = -13.0
+offset_bottom = -1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 12
+
+[node name="spacer" type="Control" parent="popup_window/swich_project_version/chosing_another_version_window/VBoxContainer" unique_id=1018226164]
+layout_mode = 2
+
+[node name="header" type="Label" parent="popup_window/swich_project_version/chosing_another_version_window/VBoxContainer" unique_id=1793518915]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("10_h0f1k")
+theme_override_font_sizes/font_size = 16
+text = "Выберите новую версию движка"
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="popup_window/swich_project_version/chosing_another_version_window/VBoxContainer" unique_id=1039954583]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="error_description" type="Label" parent="popup_window/swich_project_version/chosing_another_version_window/VBoxContainer/HBoxContainer2" unique_id=1754582232]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+text = "Новая версия проекта из установленных Godot Engine"
+autowrap_mode = 2
+
+[node name="OptionButton" type="OptionButton" parent="popup_window/swich_project_version/chosing_another_version_window/VBoxContainer/HBoxContainer2" unique_id=1176199995]
+layout_mode = 2
+size_flags_vertical = 0
+theme_override_font_sizes/font_size = 14
+selected = 0
+item_count = 1
+popup/item_0/text = "4.6.1"
+popup/item_0/id = 0
+
+[node name="HBoxContainer" type="HBoxContainer" parent="popup_window/swich_project_version/chosing_another_version_window/VBoxContainer" unique_id=685584891]
+layout_mode = 2
+alignment = 1
+
+[node name="path_hint" type="Label" parent="popup_window/swich_project_version/chosing_another_version_window/VBoxContainer/HBoxContainer" unique_id=1718118861]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.52906674, 0.5290667, 0.5290667, 1)
+theme_override_fonts/font = ExtResource("16_ecu0m")
+theme_override_font_sizes/font_size = 10
+text = ".../Project_name"
+
+[node name="spacer" type="Control" parent="popup_window/swich_project_version/chosing_another_version_window/VBoxContainer/HBoxContainer" unique_id=1311974513]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="close" type="Button" parent="popup_window/swich_project_version/chosing_another_version_window/VBoxContainer/HBoxContainer" unique_id=712481611]
+layout_mode = 2
+theme = ExtResource("8_t4bcl")
+theme_override_font_sizes/font_size = 14
+text = "Закрыть"
+
+[node name="fix" type="Button" parent="popup_window/swich_project_version/chosing_another_version_window/VBoxContainer/HBoxContainer" unique_id=26149294]
+layout_mode = 2
+theme = ExtResource("8_c3m70")
+theme_override_font_sizes/font_size = 14
+text = "Обновить версию"
+
+[node name="spacer2" type="Control" parent="popup_window/swich_project_version/chosing_another_version_window/VBoxContainer" unique_id=1775603978]
 layout_mode = 2
 
 [node name="FileDialog" type="FileDialog" parent="popup_window" unique_id=1338183012]

@@ -7,6 +7,8 @@ signal settings_window_enable
 signal drag_and_drop_window_enable
 @warning_ignore("unused_signal")
 signal godot_engine_download_window_enable
+@warning_ignore("unused_signal")
+signal activate_window_or_switch
 
 ## SCANING SYSTEM ##
 @warning_ignore("unused_signal")

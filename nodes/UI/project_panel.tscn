@@ -7,6 +7,7 @@
 [ext_resource type="PackedScene" uid="uid://c4dcycfjtp4yh" path="res://nodes/UI/tag_project.tscn" id="4_ogak0"]
 [ext_resource type="Texture2D" uid="uid://cualc1sqm0gbo" path="res://src/sprites/bin/bin_logo.svg" id="5_g1chl"]
 [ext_resource type="Theme" uid="uid://bme18nb43kckb" path="res://src/themes/horityfox/buttons/gray/gray_button.tres" id="5_u3hnx"]
+[ext_resource type="Texture2D" uid="uid://dtwh3afljtusf" path="res://src/sprites/settings/settings_logo.svg" id="6_5gk3a"]
 [ext_resource type="Theme" uid="uid://c06aoxshvcfhh" path="res://src/themes/horityfox/buttons/blue/blue_button.tres" id="6_x0pa5"]
 [ext_resource type="Theme" uid="uid://ikg57vrcper2" path="res://src/themes/horityfox/buttons/remove/remove_basic.tres" id="7_e77bd"]
 [ext_resource type="PackedScene" uid="uid://bbyc6kphmjldi" path="res://nodes/UI/problem_detected_button.tscn" id="10_mid5l"]
@@ -41,7 +42,7 @@ func set_missing_state() -> void:
 
 func set_version(value : String) -> void:
 	_version = value
-	if _version_label: _version_label.text = \" \" + value + \" \"
+	if _version_label: _version_label.text = \" \" + value + \"     \"
 	_update_godot_path()
 
 func _update_godot_path() -> void:
@@ -236,7 +237,7 @@ _tag_scene = ExtResource("4_ogak0")
 z_index = 1
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
-text = " 4.4.1 "
+text = " 4.4.1     "
 
 [node name="background" type="Panel" parent="HBoxContainer/name_and_tags/tags/version" unique_id=401359081]
 z_index = -1
@@ -253,6 +254,35 @@ grow_vertical = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 theme_override_styles/panel = ExtResource("4_e77bd")
+
+[node name="TextureRect" type="TextureRect" parent="HBoxContainer/name_and_tags/tags/version" unique_id=1655674439]
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -13.0
+offset_top = -4.5
+offset_right = -5.0
+offset_bottom = 5.0
+grow_horizontal = 0
+grow_vertical = 2
+texture = ExtResource("6_5gk3a")
+expand_mode = 4
+stretch_mode = 5
+
+[node name="Button" type="Button" parent="HBoxContainer/name_and_tags/tags/version" unique_id=703413970]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = 0.029000001
+anchor_right = 1.0
+anchor_bottom = 1.088
+offset_top = 0.0069999695
+offset_bottom = 0.00399971
+grow_horizontal = 2
+grow_vertical = 2
+flat = true
 
 [node name="new_tag" type="Button" parent="HBoxContainer/name_and_tags/tags" unique_id=1965237965]
 layout_mode = 2
