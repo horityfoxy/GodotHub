@@ -1264,7 +1264,7 @@ func disable() -> void:
 
 func switch_window_chosing_another_version():
 	_attantion_window.hide()
-	_chosing_another_version.show()
+	_chosing_another_version.enable(_id)
 "
 
 [sub_resource type="GDScript" id="GDScript_xxyh6"]
@@ -1278,6 +1278,7 @@ signal activate_chosing_another_window
 @export var _backup_button : Button
 @export var _backup_system : Node
 @export var _progress_bar : TextureProgressBar
+@export var _path_hint : Label
 
 var _id : String = \"\"
 
@@ -1286,15 +1287,16 @@ func _ready() -> void:
 	_close_button.pressed.connect(disable)
 	_next_button.pressed.connect(activate_chosing_another_window.emit)
 	_backup_button.pressed.connect(_start_backup)
-	
 	_backup_system.backup_progress.connect(_progress_bar.update_progress)
 	_backup_system.backup_finished.connect(_on_backup_finished)
 
 func enable(id : String) -> void:
 	_id = id
+	_path_hint.text = \".../\" + SaveSystem.get_project_name(id)
 	show()
 
 func disable() -> void:
+	_id = \"\"
 	close_window.emit()
 	hide()
 
@@ -1467,14 +1469,21 @@ script/source = "extends Panel
 signal close_window
 
 @export var _close_button : Button
+@export var _path_hint : Label
+
+var _id : String = \"\"
 
 func _ready() -> void:
+	_id = \"\"
 	_close_button.pressed.connect(disable)
 
-func enable() -> void: 
+func enable(id : String) -> void: 
+	_id = id
+	_path_hint.text = \".../\" + SaveSystem.get_project_name(_id)
 	show()
 
 func disable() -> void: 
+	_id = \"\"
 	hide()
 	close_window.emit()
 "
@@ -1812,7 +1821,6 @@ horizontal_alignment = 1
 uppercase = true
 
 [node name="popup_window" type="Control" parent="." unique_id=182114234 node_paths=PackedStringArray("_blur", "_drag_and_drop_window", "_settings_window", "_get_new_version_window", "_fix_path_window", "_swich_project_version")]
-visible = false
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -2762,7 +2770,6 @@ text = "Указать"
 layout_mode = 2
 
 [node name="swich_project_version" type="Control" parent="popup_window" unique_id=1454549127 node_paths=PackedStringArray("_attantion_window", "_chosing_another_version")]
-visible = false
 z_index = 1
 layout_mode = 1
 anchors_preset = 15
@@ -2774,7 +2781,7 @@ script = SubResource("GDScript_sncrj")
 _attantion_window = NodePath("attantion_window")
 _chosing_another_version = NodePath("chosing_another_version_window")
 
-[node name="attantion_window" type="Panel" parent="popup_window/swich_project_version" unique_id=1998262722 node_paths=PackedStringArray("_close_button", "_next_button", "_backup_button", "_backup_system", "_progress_bar")]
+[node name="attantion_window" type="Panel" parent="popup_window/swich_project_version" unique_id=1998262722 node_paths=PackedStringArray("_close_button", "_next_button", "_backup_button", "_backup_system", "_progress_bar", "_path_hint")]
 visible = false
 layout_mode = 1
 anchors_preset = 8
@@ -2795,6 +2802,7 @@ _next_button = NodePath("VBoxContainer/HBoxContainer/next")
 _backup_button = NodePath("VBoxContainer/HBoxContainer/backup")
 _backup_system = NodePath("backup_system")
 _progress_bar = NodePath("VBoxContainer/HBoxContainer/backup/TextureProgressBar")
+_path_hint = NodePath("VBoxContainer/HBoxContainer/path_hint")
 
 [node name="backup_system" type="Node" parent="popup_window/swich_project_version/attantion_window" unique_id=639362146]
 script = SubResource("GDScript_p41y5")
@@ -2833,11 +2841,13 @@ layout_mode = 2
 alignment = 1
 
 [node name="path_hint" type="Label" parent="popup_window/swich_project_version/attantion_window/VBoxContainer/HBoxContainer" unique_id=1984492768]
+custom_minimum_size = Vector2(264, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.52906674, 0.5290667, 0.5290667, 1)
 theme_override_fonts/font = ExtResource("16_ecu0m")
 theme_override_font_sizes/font_size = 10
 text = ".../Project_name"
+clip_text = true
 
 [node name="spacer" type="Control" parent="popup_window/swich_project_version/attantion_window/VBoxContainer/HBoxContainer" unique_id=1198497492]
 layout_mode = 2
@@ -2886,7 +2896,7 @@ script = SubResource("GDScript_tvfxn")
 [node name="spacer2" type="Control" parent="popup_window/swich_project_version/attantion_window/VBoxContainer" unique_id=1169234214]
 layout_mode = 2
 
-[node name="chosing_another_version_window" type="Panel" parent="popup_window/swich_project_version" unique_id=640841798 node_paths=PackedStringArray("_close_button")]
+[node name="chosing_another_version_window" type="Panel" parent="popup_window/swich_project_version" unique_id=640841798 node_paths=PackedStringArray("_close_button", "_path_hint")]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -2902,6 +2912,7 @@ grow_vertical = 2
 theme_override_styles/panel = ExtResource("18_1n1q0")
 script = SubResource("GDScript_aj8fh")
 _close_button = NodePath("VBoxContainer/HBoxContainer/close")
+_path_hint = NodePath("VBoxContainer/HBoxContainer/path_hint")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="popup_window/swich_project_version/chosing_another_version_window" unique_id=1681213680]
 layout_mode = 1
@@ -2950,11 +2961,13 @@ layout_mode = 2
 alignment = 1
 
 [node name="path_hint" type="Label" parent="popup_window/swich_project_version/chosing_another_version_window/VBoxContainer/HBoxContainer" unique_id=1718118861]
+custom_minimum_size = Vector2(264, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.52906674, 0.5290667, 0.5290667, 1)
 theme_override_fonts/font = ExtResource("16_ecu0m")
 theme_override_font_sizes/font_size = 10
 text = ".../Project_name"
+clip_text = true
 
 [node name="spacer" type="Control" parent="popup_window/swich_project_version/chosing_another_version_window/VBoxContainer/HBoxContainer" unique_id=1311974513]
 layout_mode = 2

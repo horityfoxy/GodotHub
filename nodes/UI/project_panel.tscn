@@ -50,7 +50,7 @@ func set_missing_state() -> void:
 
 func set_version(value : String) -> void:
 	_version = value
-	if _version_label: _version_label.text = \" \" + value + \"     \"
+	if _version_label: _version_label.text = \" \" + value + \"    \"
 	_update_godot_path()
 
 func _update_godot_path() -> void:
