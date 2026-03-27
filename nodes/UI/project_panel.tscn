@@ -20,6 +20,8 @@ script/source = "extends panel_base
 @export var _version_label : Label
 @export var _tags_zones : HBoxContainer
 @export var _problem_detected_button: Button
+@export var _setup_version : Button
+@export var _version_button : Button
 
 var _project_path : String = \"\"
 var _godot_path : String = \"\"
@@ -31,13 +33,19 @@ func _ready() -> void:
 	if _run_button: _run_button.pressed.connect(_run_project)
 	EventBus.edit_button_pressed.connect(_edit_mode_enable)
 	EventBus.version_update.connect(_update_godot_path)
+	_setup_version.pressed.connect(_enable_switch_version)
+	
 	_tags_zones._set_id(_get_id())
 	super()
 
+func _enable_switch_version() -> void:
+	EventBus.version_change.emit(_project_id)
+
 func set_missing_state() -> void:
-	if _edit_button: _edit_button.disabled = true
-	if _run_button: _run_button.disabled = true
-	if _problem_detected_button: _problem_detected_button.enable(_project_id, false)
+	_edit_button.disabled = true
+	_run_button.disabled = true
+	_problem_detected_button.enable(_project_id, false)
+	_version_button.disabled = true
 	set_strikethrough_text()
 
 func set_version(value : String) -> void:
@@ -162,7 +170,7 @@ func load_tag():
 	_show_create_tag_button()
 "
 
-[node name="project_1" type="Panel" unique_id=426653167 node_paths=PackedStringArray("_edit_button", "_run_button", "_version_label", "_tags_zones", "_problem_detected_button", "_label_name", "_icon_texture", "_remove_button")]
+[node name="project_1" type="Panel" unique_id=426653167 node_paths=PackedStringArray("_edit_button", "_run_button", "_version_label", "_tags_zones", "_problem_detected_button", "_setup_version", "_version_button", "_label_name", "_icon_texture", "_remove_button")]
 custom_minimum_size = Vector2(0, 72)
 theme_override_styles/panel = ExtResource("1_c0s5n")
 script = SubResource("GDScript_uyqn0")
@@ -171,6 +179,8 @@ _run_button = NodePath("HBoxContainer/run_project")
 _version_label = NodePath("HBoxContainer/name_and_tags/tags/version")
 _tags_zones = NodePath("HBoxContainer/name_and_tags/tags")
 _problem_detected_button = NodePath("HBoxContainer/problem_detected_button")
+_setup_version = NodePath("HBoxContainer/name_and_tags/tags/version/setup_version")
+_version_button = NodePath("HBoxContainer/name_and_tags/tags/version/setup_version")
 _label_name = NodePath("HBoxContainer/name_and_tags/name")
 _icon_texture = NodePath("HBoxContainer/icon")
 _remove_button = NodePath("HBoxContainer/remove_project")
@@ -272,7 +282,7 @@ texture = ExtResource("6_5gk3a")
 expand_mode = 4
 stretch_mode = 5
 
-[node name="Button" type="Button" parent="HBoxContainer/name_and_tags/tags/version" unique_id=703413970]
+[node name="setup_version" type="Button" parent="HBoxContainer/name_and_tags/tags/version" unique_id=703413970]
 layout_mode = 1
 anchors_preset = -1
 anchor_top = 0.029000001

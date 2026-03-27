@@ -290,8 +290,13 @@ func _ready() -> void:
 	EventBus.drag_and_drop_window_enable.connect(enable_drag_and_drop)
 	EventBus.godot_engine_download_window_enable.connect(enable_get_engine_version)
 	EventBus.fix_path_activate.connect(enable_fix_path_window)
+	EventBus.version_change.connect(enable_swich_project_version)
 
-func enable_fix_path_window(_id : String, is_engine_mode : bool):
+func enable_swich_project_version(_project_id : String) -> void:
+	enable()
+	_swich_project_version.enable(_project_id)
+
+func enable_fix_path_window(_id : String, is_engine_mode : bool) -> void:
 	enable()
 	_fix_path_window.setup_fix_window(_id, is_engine_mode)
 
@@ -1225,13 +1230,246 @@ func setup_fix_window(engine_id : String, is_engine_mode : bool) -> void:
 [sub_resource type="GDScript" id="GDScript_sncrj"]
 script/source = "extends Control
 
+@export var _attantion_window : Panel
+@export var _chosing_another_version : Panel
+
 signal close_window
 
-func enable() -> void:
+var _id : String = \"\"
+
+func _ready() -> void:
+	_id = \"\"
+	_attantion_window.close_window.connect(disable)
+	_attantion_window.activate_chosing_another_window.connect(switch_window_chosing_another_version)
+	_chosing_another_version.close_window.connect(disable)
+
+func enable(id : String) -> void:
+	_id = id
+	_attantion_window.enable(_id)
 	show()
 
 func disable() -> void:
+	_id = \"\"
+	_attantion_window.hide()
+	_chosing_another_version.hide()
+	close_window.emit()
 	hide()
+
+func switch_window_chosing_another_version():
+	_attantion_window.hide()
+	_chosing_another_version.show()
+"
+
+[sub_resource type="GDScript" id="GDScript_xxyh6"]
+script/source = "extends Panel
+
+signal close_window
+signal activate_chosing_another_window
+
+@export var _close_button : Button
+@export var _next_button : Button
+@export var _backup_button : Button
+@export var _backup_system : Node
+@export var _progress_bar : TextureProgressBar
+
+var _id : String = \"\"
+
+func _ready() -> void:
+	_id = \"\"
+	_close_button.pressed.connect(disable)
+	_next_button.pressed.connect(activate_chosing_another_window.emit)
+	_backup_button.pressed.connect(_start_backup)
+	
+	_backup_system.backup_progress.connect(_progress_bar.update_progress)
+	_backup_system.backup_finished.connect(_on_backup_finished)
+
+func enable(id : String) -> void:
+	_id = id
+	show()
+
+func disable() -> void:
+	close_window.emit()
+	hide()
+
+func _start_backup() -> void:
+	_progress_bar.update_progress(0.0) 
+	
+	_backup_button.disabled = true
+	_next_button.disabled = true
+	_close_button.disabled = true
+	_backup_button.text = \"  \"
+	_backup_system.create_backup_async(_id)
+
+@warning_ignore(\"unused_parameter\")
+func _on_backup_finished(new_id: String) -> void:
+	_backup_button.disabled = false
+	_next_button.disabled = false
+	_close_button.disabled = false
+	_backup_button.text = \"Резервная копия\"
+	_progress_bar.hide()
+"
+
+[sub_resource type="GDScript" id="GDScript_p41y5"]
+script/source = "extends Node
+
+signal backup_started
+signal backup_progress(percent: float)
+signal backup_finished(new_project_id: String)
+
+var _backup_thread: Thread
+var _total_files: int = 0
+var _copied_files: int = 0
+
+func create_backup_async(project_id: String) -> void:
+	if _backup_thread and _backup_thread.is_alive():
+		printerr(\"The copy flow is already running.\")
+		return
+		
+	var project_data = SaveSystem.get_project_by_id(project_id)
+	if project_data.is_empty():
+		printerr(\"Project with '\", project_id, \"' ID not found.\")
+		return
+	
+	var original_file_path: String = project_data.get(\"path\", \"\")
+	var original_name: String = project_data.get(\"name\", \"Unnamed Project\")
+	
+	if original_file_path.is_empty():
+		printerr(\"Project '\", original_name, \"' has empty path.\")
+		return
+		
+	var original_dir: String = original_file_path.get_base_dir()
+		
+	if not DirAccess.dir_exists_absolute(original_dir):
+		printerr(\"The source directory does not exist on the disk: \", original_dir)
+		return
+
+	var time = Time.get_datetime_dict_from_system()
+	var time_string = \"%04d%02d%02d_%02d%02d%02d\" % [time.year, time.month, time.day, time.hour, time.minute, time.second]
+	
+	var backup_name = original_name + \" backup (\" + time_string + \")\"
+	var backup_dir = original_dir + \"_backup_\" + time_string 
+	
+	var new_project_file_path = backup_dir + \"/\" + original_file_path.get_file()
+	
+	var thread_data = {
+		\"src\": original_dir,
+		\"dest\": backup_dir,
+		\"name\": backup_name,
+		\"register_path\": new_project_file_path
+	}
+	
+	_backup_thread = Thread.new()
+	backup_started.emit()
+	_backup_thread.start(_perform_backup.bind(thread_data))
+
+func _perform_backup(data: Dictionary) -> void:
+	_total_files = _count_files_recursive(data[\"src\"])
+	_copied_files = 0
+	
+	var err = _copy_dir_recursive(data[\"src\"], data[\"dest\"])
+	
+	if err == OK:
+		var update_err = _update_project_name_in_file(data[\"register_path\"], data[\"name\"])
+		if update_err != OK:
+			printerr(\"Attention: The internal name in the project file could not be updated.godot. Code: \", update_err)
+	
+	call_deferred(\"_on_backup_completed\", err, data[\"register_path\"], data[\"name\"])
+
+## edit INI file
+func _update_project_name_in_file(file_path: String, new_name: String) -> Error:
+	var config = ConfigFile.new()
+	var err = config.load(file_path)
+	
+	if err != OK: return err
+	
+	config.set_value(\"application\", \"config/name\", new_name)
+	return config.save(file_path)
+
+func _on_backup_completed(err: Error, register_path: String, backup_name: String) -> void:
+	if _backup_thread.is_started():
+		_backup_thread.wait_to_finish()
+	if err == OK:
+		SaveSystem.add_project(register_path, backup_name)
+		var clean_path = register_path.replace(\"\\\\\", \"/\").simplify_path()
+		var new_id = str(clean_path.hash())
+		EventBus.ui_project_list_updated.emit()
+		
+		print(\"Success: Backup saved and registered on the way \", register_path)
+		backup_finished.emit(new_id)
+	else:
+		printerr(\"Critical error when copying files: Code \", err)
+		backup_finished.emit(\"\") 
+
+func _count_files_recursive(dir_path: String) -> int:
+	var count = 0
+	var dir = DirAccess.open(dir_path)
+	if not dir: return count
+	
+	dir.list_dir_begin()
+	var file_name = dir.get_next()
+	while file_name != \"\":
+		if file_name == \".\" or file_name == \"..\":
+			file_name = dir.get_next()
+			continue
+			
+		var full_path = dir_path + \"/\" + file_name
+		if dir.current_is_dir():
+			count += _count_files_recursive(full_path)
+		else:
+			count += 1
+		file_name = dir.get_next()
+		
+	return count
+
+func _copy_dir_recursive(from_dir: String, to_dir: String) -> Error:
+	var dir = DirAccess.open(from_dir)
+	if not dir: return FAILED
+		
+	DirAccess.make_dir_recursive_absolute(to_dir)
+	dir.list_dir_begin()
+	var file_name = dir.get_next()
+	
+	while file_name != \"\":
+		if file_name == \".\" or file_name == \"..\":
+			file_name = dir.get_next()
+			continue
+			
+		var src_path = from_dir + \"/\" + file_name
+		var dest_path = to_dir + \"/\" + file_name
+		
+		if dir.current_is_dir():
+			var err = _copy_dir_recursive(src_path, dest_path)
+			if err != OK: return err
+		else:
+			var err = DirAccess.copy_absolute(src_path, dest_path)
+			if err != OK: return err
+			
+			_copied_files += 1
+			if _total_files > 0:
+				var percent = (float(_copied_files) / float(_total_files)) * 100.0
+				backup_progress.emit.call_deferred(percent)
+			
+		file_name = dir.get_next()
+		
+	return OK
+"
+
+[sub_resource type="GDScript" id="GDScript_aj8fh"]
+script/source = "extends Panel
+
+signal close_window
+
+@export var _close_button : Button
+
+func _ready() -> void:
+	_close_button.pressed.connect(disable)
+
+func enable() -> void: 
+	show()
+
+func disable() -> void: 
+	hide()
+	close_window.emit()
 "
 
 [node name="main" type="CanvasLayer" unique_id=2071414279]
@@ -1566,7 +1804,7 @@ text = "Создано HorityFox для сообщества Godot Engine"
 horizontal_alignment = 1
 uppercase = true
 
-[node name="popup_window" type="Control" parent="." unique_id=182114234 node_paths=PackedStringArray("_blur", "_drag_and_drop_window", "_settings_window", "_get_new_version_window", "_fix_path_window")]
+[node name="popup_window" type="Control" parent="." unique_id=182114234 node_paths=PackedStringArray("_blur", "_drag_and_drop_window", "_settings_window", "_get_new_version_window", "_fix_path_window", "_swich_project_version")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -1580,6 +1818,7 @@ _drag_and_drop_window = NodePath("drag_and_drop_project")
 _settings_window = NodePath("settings")
 _get_new_version_window = NodePath("download_godot_window")
 _fix_path_window = NodePath("fix_broken_path")
+_swich_project_version = NodePath("swich_project_version")
 
 [node name="bg" type="ColorRect" parent="popup_window" unique_id=644468900]
 z_index = 1
@@ -2514,7 +2753,7 @@ text = "Указать"
 [node name="spacer2" type="Control" parent="popup_window/fix_broken_path/Panel/VBoxContainer" unique_id=1291606563]
 layout_mode = 2
 
-[node name="swich_project_version" type="Control" parent="popup_window" unique_id=1454549127]
+[node name="swich_project_version" type="Control" parent="popup_window" unique_id=1454549127 node_paths=PackedStringArray("_attantion_window", "_chosing_another_version")]
 z_index = 1
 layout_mode = 1
 anchors_preset = 15
@@ -2523,9 +2762,10 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = SubResource("GDScript_sncrj")
+_attantion_window = NodePath("attantion_window")
+_chosing_another_version = NodePath("chosing_another_version_window")
 
-[node name="attantion_window" type="Panel" parent="popup_window/swich_project_version" unique_id=1998262722]
-visible = false
+[node name="attantion_window" type="Panel" parent="popup_window/swich_project_version" unique_id=1998262722 node_paths=PackedStringArray("_close_button", "_next_button", "_backup_button", "_backup_system", "_progress_bar")]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -2539,6 +2779,15 @@ offset_bottom = 72.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = ExtResource("18_1n1q0")
+script = SubResource("GDScript_xxyh6")
+_close_button = NodePath("VBoxContainer/HBoxContainer/close")
+_next_button = NodePath("VBoxContainer/HBoxContainer/next")
+_backup_button = NodePath("VBoxContainer/HBoxContainer/backup")
+_backup_system = NodePath("backup_system")
+_progress_bar = NodePath("VBoxContainer/HBoxContainer/backup/TextureProgressBar")
+
+[node name="backup_system" type="Node" parent="popup_window/swich_project_version/attantion_window" unique_id=639362146]
+script = SubResource("GDScript_p41y5")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="popup_window/swich_project_version/attantion_window" unique_id=1338453147]
 layout_mode = 1
@@ -2596,16 +2845,39 @@ theme = ExtResource("8_t4bcl")
 theme_override_font_sizes/font_size = 14
 text = "Далее"
 
-[node name="fix" type="Button" parent="popup_window/swich_project_version/attantion_window/VBoxContainer/HBoxContainer" unique_id=1129048549]
+[node name="backup" type="Button" parent="popup_window/swich_project_version/attantion_window/VBoxContainer/HBoxContainer" unique_id=1129048549]
 layout_mode = 2
 theme = ExtResource("8_c3m70")
 theme_override_font_sizes/font_size = 14
 text = "Резервная копия"
 
+[node name="TextureProgressBar" type="TextureProgressBar" parent="popup_window/swich_project_version/attantion_window/VBoxContainer/HBoxContainer/backup" unique_id=2049217375]
+visible = false
+material = SubResource("ShaderMaterial_vr02l")
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -7.0
+offset_top = -6.5
+offset_right = 6.0
+offset_bottom = 8.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+value = 39.0
+fill_mode = 4
+texture_under = SubResource("GradientTexture2D_2toya")
+texture_progress = SubResource("GradientTexture2D_jfcuo")
+script = SubResource("GDScript_tvfxn")
+
 [node name="spacer2" type="Control" parent="popup_window/swich_project_version/attantion_window/VBoxContainer" unique_id=1169234214]
 layout_mode = 2
 
 [node name="chosing_another_version_window" type="Panel" parent="popup_window/swich_project_version" unique_id=640841798]
+visible = false
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -2619,6 +2891,7 @@ offset_bottom = 72.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = ExtResource("18_1n1q0")
+script = SubResource("GDScript_aj8fh")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="popup_window/swich_project_version/chosing_another_version_window" unique_id=1681213680]
 layout_mode = 1

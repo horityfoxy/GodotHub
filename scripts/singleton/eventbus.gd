@@ -39,3 +39,7 @@ signal ui_project_list_updated
 ## PATH FIX SIGNALS ##
 @warning_ignore("unused_signal")
 signal fix_path_activate(id : String, is_engine_mode)
+
+## VERSION CHANGER ##
+@warning_ignore("unused_signal")
+signal version_change(id : String)
