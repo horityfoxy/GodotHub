@@ -1245,6 +1245,7 @@ var _id : String = \"\"
 
 func _ready() -> void:
 	_id = \"\"
+	hide()
 	_attantion_window.close_window.connect(disable)
 	_attantion_window.activate_chosing_another_window.connect(switch_window_chosing_another_version)
 	_chosing_another_version.close_window.connect(disable)
@@ -1284,6 +1285,7 @@ var _id : String = \"\"
 
 func _ready() -> void:
 	_id = \"\"
+	hide()
 	_close_button.pressed.connect(disable)
 	_next_button.pressed.connect(activate_chosing_another_window.emit)
 	_backup_button.pressed.connect(_start_backup)
@@ -1292,7 +1294,8 @@ func _ready() -> void:
 
 func enable(id : String) -> void:
 	_id = id
-	_path_hint.text = \".../\" + SaveSystem.get_project_name(id)
+	var full_text : String = \".../\" + SaveSystem.get_project_name(_id)
+	_path_hint.text = full_text.left(40) + \"...\" if full_text.length() > 40 else full_text
 	show()
 
 func disable() -> void:
@@ -1470,22 +1473,85 @@ signal close_window
 
 @export var _close_button : Button
 @export var _path_hint : Label
+@export var _option_button : OptionButton
+@export var _update_version : Button
 
 var _id : String = \"\"
+var _version : String = \"\"
 
 func _ready() -> void:
 	_id = \"\"
+	hide()
+	_option_button._on_version_selected.connect(_new_version_selected)
 	_close_button.pressed.connect(disable)
+	_update_version.pressed.connect(_on_update_version_pressed)
+
+func _new_version_selected(_new_version : String) -> void:
+	_version = _new_version
 
 func enable(id : String) -> void: 
 	_id = id
-	_path_hint.text = \".../\" + SaveSystem.get_project_name(_id)
+	var full_text : String = \".../\" + SaveSystem.get_project_name(_id)
+	_path_hint.text = full_text.left(40) + \"...\" if full_text.length() > 40 else full_text
+	
+	if _option_button.has_method(\"enable\"):
+		_option_button.enable()
 	show()
 
 func disable() -> void: 
 	_id = \"\"
 	hide()
 	close_window.emit()
+
+func _on_update_version_pressed() -> void:
+	if _id.is_empty() or _version.is_empty(): return
+	var engine_path : String = VersionControl.get_godot_path(_version)
+	
+	if engine_path.is_empty() or not FileAccess.file_exists(engine_path):
+		if _option_button.has_method(\"_refresh_versions\"):
+			_option_button._refresh_versions()
+		return
+	SaveSystem.update_project_version(_id, _version)
+	var project_path : String = SaveSystem.get_project_by_id(_id).get(\"path\", \"\")
+	
+	if not project_path.is_empty():
+		var dir_path: String = project_path
+		if project_path.ends_with(\"project.godot\"):
+			dir_path = project_path.get_base_dir()
+		OS.create_process(engine_path, [\"-e\", \"--path\", dir_path])
+	get_tree().quit()
+"
+
+[sub_resource type="GDScript" id="GDScript_n8d6l"]
+script/source = "extends OptionButton
+
+signal _on_version_selected(varsion : String)
+
+func _ready() -> void:
+	EventBus.godot_installed_version_changed.connect(_refresh_versions)
+	item_selected.connect(_on_item_selected)
+	_refresh_versions()
+
+func _refresh_versions() -> void:
+	clear()
+	var versions: Array = VersionControl.get_sorted_versions()
+	
+	if versions.is_empty():
+		set_item_disabled(0, true)
+		return
+		
+	for i in range(versions.size()):
+		var version_id: String = versions[i]
+		add_item(version_id)
+
+func enable() -> void:
+	if item_count > 0:
+		_on_item_selected(0)
+
+func _on_item_selected(index: int) -> void:
+	var selected_version_id: String = get_item_text(index)
+	_on_version_selected.emit(selected_version_id)
+	print(\"User choose verion: \", selected_version_id)
 "
 
 [node name="main" type="CanvasLayer" unique_id=2071414279]
@@ -1821,6 +1887,7 @@ horizontal_alignment = 1
 uppercase = true
 
 [node name="popup_window" type="Control" parent="." unique_id=182114234 node_paths=PackedStringArray("_blur", "_drag_and_drop_window", "_settings_window", "_get_new_version_window", "_fix_path_window", "_swich_project_version")]
+visible = false
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -2770,6 +2837,7 @@ text = "Указать"
 layout_mode = 2
 
 [node name="swich_project_version" type="Control" parent="popup_window" unique_id=1454549127 node_paths=PackedStringArray("_attantion_window", "_chosing_another_version")]
+visible = false
 z_index = 1
 layout_mode = 1
 anchors_preset = 15
@@ -2896,7 +2964,8 @@ script = SubResource("GDScript_tvfxn")
 [node name="spacer2" type="Control" parent="popup_window/swich_project_version/attantion_window/VBoxContainer" unique_id=1169234214]
 layout_mode = 2
 
-[node name="chosing_another_version_window" type="Panel" parent="popup_window/swich_project_version" unique_id=640841798 node_paths=PackedStringArray("_close_button", "_path_hint")]
+[node name="chosing_another_version_window" type="Panel" parent="popup_window/swich_project_version" unique_id=640841798 node_paths=PackedStringArray("_close_button", "_path_hint", "_option_button", "_update_version")]
+visible = false
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -2913,6 +2982,8 @@ theme_override_styles/panel = ExtResource("18_1n1q0")
 script = SubResource("GDScript_aj8fh")
 _close_button = NodePath("VBoxContainer/HBoxContainer/close")
 _path_hint = NodePath("VBoxContainer/HBoxContainer/path_hint")
+_option_button = NodePath("VBoxContainer/HBoxContainer2/OptionButton")
+_update_version = NodePath("VBoxContainer/HBoxContainer/fix")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="popup_window/swich_project_version/chosing_another_version_window" unique_id=1681213680]
 layout_mode = 1
@@ -2955,6 +3026,7 @@ selected = 0
 item_count = 1
 popup/item_0/text = "4.6.1"
 popup/item_0/id = 0
+script = SubResource("GDScript_n8d6l")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="popup_window/swich_project_version/chosing_another_version_window/VBoxContainer" unique_id=685584891]
 layout_mode = 2
