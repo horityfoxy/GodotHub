@@ -1925,13 +1925,13 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = SubResource("GDScript_1vlam")
-_close_window_button = NodePath("window/VBoxContainer/HBoxContainer/close")
+_close_window_button = NodePath("window/VBoxContainer2/HBoxContainer/close")
 _drag_and_drop_window = NodePath("window")
 
 [node name="path_system" type="Node" parent="popup_window/drag_and_drop_project" unique_id=1489943928 node_paths=PackedStringArray("_scan_projects_button", "_close_window_button", "_file_dialog", "drop_zone")]
 script = SubResource("GDScript_vr02l")
-_scan_projects_button = NodePath("../window/VBoxContainer/HBoxContainer/scan_project")
-_close_window_button = NodePath("../window/VBoxContainer/HBoxContainer/close")
+_scan_projects_button = NodePath("../window/VBoxContainer2/HBoxContainer/scan_project")
+_close_window_button = NodePath("../window/VBoxContainer2/HBoxContainer/close")
 _file_dialog = NodePath("../../FileDialog")
 drop_zone = NodePath("../window/drop_zone")
 
@@ -1952,30 +1952,44 @@ theme_override_styles/panel = ExtResource("18_1n1q0")
 script = SubResource("GDScript_g653p")
 drop_zone = NodePath("drop_zone")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="popup_window/drag_and_drop_project/window" unique_id=916510419]
+[node name="VBoxContainer2" type="VBoxContainer" parent="popup_window/drag_and_drop_project/window" unique_id=1505019412]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 63.0
-offset_top = 12.0
-offset_right = -63.0
-offset_bottom = -12.0
+offset_top = 1.0
+offset_bottom = -1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Label" type="Label" parent="popup_window/drag_and_drop_project/window/VBoxContainer" unique_id=165494374]
+[node name="Control" type="Control" parent="popup_window/drag_and_drop_project/window/VBoxContainer2" unique_id=332450421]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="popup_window/drag_and_drop_project/window/VBoxContainer2" unique_id=165494374]
 layout_mode = 2
 theme = ExtResource("14_01b7x")
 text = "Переместите или сканируйте папку с проектами"
 horizontal_alignment = 1
 clip_text = true
 
-[node name="icon" type="Control" parent="popup_window/drag_and_drop_project/window/VBoxContainer" unique_id=204135268]
+[node name="Panel" type="Panel" parent="popup_window/drag_and_drop_project/window/VBoxContainer2" unique_id=991010155]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = ExtResource("17_d4yno")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="popup_window/drag_and_drop_project/window/VBoxContainer2/Panel" unique_id=916510419]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="icon" type="Control" parent="popup_window/drag_and_drop_project/window/VBoxContainer2/Panel/VBoxContainer" unique_id=204135268]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="TextureRect" type="TextureRect" parent="popup_window/drag_and_drop_project/window/VBoxContainer/icon" unique_id=531745612]
+[node name="TextureRect" type="TextureRect" parent="popup_window/drag_and_drop_project/window/VBoxContainer2/Panel/VBoxContainer/icon" unique_id=531745612]
 modulate = Color(0.34407577, 0.34407577, 0.34407565, 1)
 layout_mode = 1
 anchors_preset = 8
@@ -1993,20 +2007,23 @@ texture = ExtResource("3_ufc4x")
 expand_mode = 4
 stretch_mode = 5
 
-[node name="HBoxContainer" type="HBoxContainer" parent="popup_window/drag_and_drop_project/window/VBoxContainer" unique_id=217887422]
+[node name="HBoxContainer" type="HBoxContainer" parent="popup_window/drag_and_drop_project/window/VBoxContainer2" unique_id=217887422]
 layout_mode = 2
 theme_override_constants/separation = 8
 alignment = 1
 
-[node name="scan_project" type="Button" parent="popup_window/drag_and_drop_project/window/VBoxContainer/HBoxContainer" unique_id=695065214]
+[node name="scan_project" type="Button" parent="popup_window/drag_and_drop_project/window/VBoxContainer2/HBoxContainer" unique_id=695065214]
 layout_mode = 2
 theme = ExtResource("8_c3m70")
 text = "Сканировать"
 
-[node name="close" type="Button" parent="popup_window/drag_and_drop_project/window/VBoxContainer/HBoxContainer" unique_id=2029715583]
+[node name="close" type="Button" parent="popup_window/drag_and_drop_project/window/VBoxContainer2/HBoxContainer" unique_id=2029715583]
 layout_mode = 2
 theme = ExtResource("8_t4bcl")
 text = "Закрыть"
+
+[node name="Control2" type="Control" parent="popup_window/drag_and_drop_project/window/VBoxContainer2" unique_id=1367634034]
+layout_mode = 2
 
 [node name="drop_zone" type="Control" parent="popup_window/drag_and_drop_project/window" unique_id=223837236 node_paths=PackedStringArray("_path_system")]
 clip_contents = true
@@ -2052,42 +2069,60 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = ExtResource("18_1n1q0")
 script = SubResource("GDScript_ecu0m")
-_about_button = NodePath("VBoxContainer/HBoxContainer/about")
-_close_settings_button = NodePath("VBoxContainer/HBoxContainer/close")
+_about_button = NodePath("VBoxContainer2/HBoxContainer/about")
+_close_settings_button = NodePath("VBoxContainer2/HBoxContainer/close")
 _about_window = NodePath("../about_window")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="popup_window/settings/settings_window" unique_id=292929761]
+[node name="VBoxContainer2" type="VBoxContainer" parent="popup_window/settings/settings_window" unique_id=269087744]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 20.0
-offset_top = 12.0
-offset_right = -20.0
-offset_bottom = -12.0
+offset_top = 1.0
+offset_bottom = -1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Label" type="Label" parent="popup_window/settings/settings_window/VBoxContainer" unique_id=1036067533]
+[node name="Control2" type="Control" parent="popup_window/settings/settings_window/VBoxContainer2" unique_id=2129767378]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="popup_window/settings/settings_window/VBoxContainer2" unique_id=1036067533]
 layout_mode = 2
 theme = ExtResource("14_01b7x")
+theme_override_colors/font_color = Color(0.8784314, 0.8784314, 0.8784314, 1)
 text = "Настройки"
 horizontal_alignment = 1
 clip_text = true
 
-[node name="VBoxContainer" type="VBoxContainer" parent="popup_window/settings/settings_window/VBoxContainer" unique_id=534078114]
+[node name="BG" type="Panel" parent="popup_window/settings/settings_window/VBoxContainer2" unique_id=567610624]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = ExtResource("17_d4yno")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="popup_window/settings/settings_window/VBoxContainer2/BG" unique_id=292929761]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 18.0
+offset_top = 17.0
+offset_right = -18.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="popup_window/settings/settings_window/VBoxContainer2/BG/VBoxContainer" unique_id=534078114]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="language" type="HBoxContainer" parent="popup_window/settings/settings_window/VBoxContainer/VBoxContainer" unique_id=1534520518]
+[node name="language" type="HBoxContainer" parent="popup_window/settings/settings_window/VBoxContainer2/BG/VBoxContainer/VBoxContainer" unique_id=1534520518]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="popup_window/settings/settings_window/VBoxContainer/VBoxContainer/language" unique_id=1707943281]
+[node name="Label" type="Label" parent="popup_window/settings/settings_window/VBoxContainer2/BG/VBoxContainer/VBoxContainer/language" unique_id=1707943281]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Язык"
 
-[node name="OptionButton" type="OptionButton" parent="popup_window/settings/settings_window/VBoxContainer/VBoxContainer/language" unique_id=1569932035]
+[node name="OptionButton" type="OptionButton" parent="popup_window/settings/settings_window/VBoxContainer2/BG/VBoxContainer/VBoxContainer/language" unique_id=1569932035]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 disabled = true
@@ -2097,16 +2132,16 @@ item_count = 1
 popup/item_0/text = "Русский"
 popup/item_0/id = 0
 
-[node name="theme" type="HBoxContainer" parent="popup_window/settings/settings_window/VBoxContainer/VBoxContainer" unique_id=1705096437]
+[node name="theme" type="HBoxContainer" parent="popup_window/settings/settings_window/VBoxContainer2/BG/VBoxContainer/VBoxContainer" unique_id=1705096437]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="popup_window/settings/settings_window/VBoxContainer/VBoxContainer/theme" unique_id=185104013]
+[node name="Label" type="Label" parent="popup_window/settings/settings_window/VBoxContainer2/BG/VBoxContainer/VBoxContainer/theme" unique_id=185104013]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 14
 text = "Тема"
 
-[node name="OptionButton" type="OptionButton" parent="popup_window/settings/settings_window/VBoxContainer/VBoxContainer/theme" unique_id=297769814]
+[node name="OptionButton" type="OptionButton" parent="popup_window/settings/settings_window/VBoxContainer2/BG/VBoxContainer/VBoxContainer/theme" unique_id=297769814]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 disabled = true
@@ -2116,20 +2151,23 @@ item_count = 1
 popup/item_0/text = "HorityFox"
 popup/item_0/id = 0
 
-[node name="HBoxContainer" type="HBoxContainer" parent="popup_window/settings/settings_window/VBoxContainer" unique_id=1776253442]
+[node name="HBoxContainer" type="HBoxContainer" parent="popup_window/settings/settings_window/VBoxContainer2" unique_id=1776253442]
 layout_mode = 2
 theme_override_constants/separation = 8
 alignment = 1
 
-[node name="about" type="Button" parent="popup_window/settings/settings_window/VBoxContainer/HBoxContainer" unique_id=514248537]
+[node name="about" type="Button" parent="popup_window/settings/settings_window/VBoxContainer2/HBoxContainer" unique_id=514248537]
 layout_mode = 2
 theme = ExtResource("8_c3m70")
 text = "О программе"
 
-[node name="close" type="Button" parent="popup_window/settings/settings_window/VBoxContainer/HBoxContainer" unique_id=1872791804]
+[node name="close" type="Button" parent="popup_window/settings/settings_window/VBoxContainer2/HBoxContainer" unique_id=1872791804]
 layout_mode = 2
 theme = ExtResource("8_t4bcl")
 text = "Закрыть"
+
+[node name="Control" type="Control" parent="popup_window/settings/settings_window/VBoxContainer2" unique_id=242661791]
+layout_mode = 2
 
 [node name="about_window" type="Panel" parent="popup_window/settings" unique_id=266747320 node_paths=PackedStringArray("_view_window", "_godot_hub_button", "_lineseedjp_button", "_godot_engine_button", "_about_program_button", "_close_about_window_button", "_update_button")]
 visible = false
@@ -2443,7 +2481,7 @@ layout_mode = 2
 custom_minimum_size = Vector2(0, 27)
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.8784314, 0.8784314, 0.8784314, 1)
+theme = ExtResource("14_01b7x")
 text = "Менеджер загрузок Godot Engine"
 horizontal_alignment = 1
 vertical_alignment = 1

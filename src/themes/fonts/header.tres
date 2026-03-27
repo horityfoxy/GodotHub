@@ -1,8 +1,9 @@
 [gd_resource type="Theme" format=3 uid="uid://d24t8jknpr3a4"]
 
-[ext_resource type="FontFile" uid="uid://crxptqsk1pq64" path="res://src/fonts/LINESeedJP/LINESeedJP-Bold.ttf" id="1_8hrmm"]
+[ext_resource type="FontFile" uid="uid://cev2ga8asvqgc" path="res://src/fonts/LINESeedJP/LINESeedJP-Regular.ttf" id="1_8hrmm"]
 
 [resource]
-Label/colors/font_color = Color(0.78352344, 0.78352344, 0.78352326, 1)
+default_font_size = 14
+Label/colors/font_color = Color(0.8784314, 0.8784314, 0.8784314, 1)
 Label/font_sizes/font_size = 14
 Label/fonts/font = ExtResource("1_8hrmm")
