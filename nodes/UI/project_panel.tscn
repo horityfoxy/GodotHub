@@ -7,6 +7,7 @@
 [ext_resource type="PackedScene" uid="uid://c4dcycfjtp4yh" path="res://nodes/UI/tag_project.tscn" id="4_ogak0"]
 [ext_resource type="Texture2D" uid="uid://cualc1sqm0gbo" path="res://src/sprites/bin/bin_logo.svg" id="5_g1chl"]
 [ext_resource type="Theme" uid="uid://bme18nb43kckb" path="res://src/themes/horityfox/buttons/gray/gray_button.tres" id="5_u3hnx"]
+[ext_resource type="Texture2D" uid="uid://dtwh3afljtusf" path="res://src/sprites/settings/settings_logo.svg" id="6_5gk3a"]
 [ext_resource type="Theme" uid="uid://c06aoxshvcfhh" path="res://src/themes/horityfox/buttons/blue/blue_button.tres" id="6_x0pa5"]
 [ext_resource type="Theme" uid="uid://ikg57vrcper2" path="res://src/themes/horityfox/buttons/remove/remove_basic.tres" id="7_e77bd"]
 [ext_resource type="PackedScene" uid="uid://bbyc6kphmjldi" path="res://nodes/UI/problem_detected_button.tscn" id="10_mid5l"]
@@ -19,6 +20,8 @@ script/source = "extends panel_base
 @export var _version_label : Label
 @export var _tags_zones : HBoxContainer
 @export var _problem_detected_button: Button
+@export var _setup_version : Button
+@export var _version_button : Button
 
 var _project_path : String = \"\"
 var _godot_path : String = \"\"
@@ -30,21 +33,24 @@ func _ready() -> void:
 	if _run_button: _run_button.pressed.connect(_run_project)
 	EventBus.edit_button_pressed.connect(_edit_mode_enable)
 	EventBus.version_update.connect(_update_godot_path)
-	
-	#_problem_detected_button.enable(_project_id, false)
+	_setup_version.pressed.connect(_enable_switch_version)
 	
 	_tags_zones._set_id(_get_id())
 	super()
 
+func _enable_switch_version() -> void:
+	EventBus.version_change.emit(_project_id)
+
 func set_missing_state() -> void:
-	if _edit_button: _edit_button.disabled = true
-	if _run_button: _run_button.disabled = true
-	if _problem_detected_button: _problem_detected_button.enable(_project_id, false)
+	_edit_button.disabled = true
+	_run_button.disabled = true
+	_problem_detected_button.enable(_project_id, false)
+	_version_button.disabled = true
 	set_strikethrough_text()
 
 func set_version(value : String) -> void:
 	_version = value
-	if _version_label: _version_label.text = \" \" + value + \" \"
+	if _version_label: _version_label.text = \" \" + value + \"    \"
 	_update_godot_path()
 
 func _update_godot_path() -> void:
@@ -53,6 +59,7 @@ func _update_godot_path() -> void:
 	for v in installed_versions:
 		if v == _version or v.begins_with(_version + \".\"):
 			_godot_path = VersionControl.get_godot_path(v)
+			SaveSystem.update_project_version(_project_id, v)
 			return
 	_godot_path = \"\"
 
@@ -67,6 +74,7 @@ func launch_project_in_editor(_args : PackedStringArray) -> void:
 		return
 	if _project_path == \"\":
 		printerr(\"ERROR: Project path is empty!\")
+		set_missing_state()
 		return
 	var pid: int = OS.create_process(_godot_path, _args)
 	if pid > 0: if _args.has(\"-e\"): get_tree().quit()
@@ -163,7 +171,7 @@ func load_tag():
 	_show_create_tag_button()
 "
 
-[node name="project_1" type="Panel" unique_id=426653167 node_paths=PackedStringArray("_edit_button", "_run_button", "_version_label", "_tags_zones", "_problem_detected_button", "_label_name", "_icon_texture", "_remove_button")]
+[node name="project_1" type="Panel" unique_id=426653167 node_paths=PackedStringArray("_edit_button", "_run_button", "_version_label", "_tags_zones", "_problem_detected_button", "_setup_version", "_version_button", "_label_name", "_icon_texture", "_remove_button")]
 custom_minimum_size = Vector2(0, 72)
 theme_override_styles/panel = ExtResource("1_c0s5n")
 script = SubResource("GDScript_uyqn0")
@@ -172,6 +180,8 @@ _run_button = NodePath("HBoxContainer/run_project")
 _version_label = NodePath("HBoxContainer/name_and_tags/tags/version")
 _tags_zones = NodePath("HBoxContainer/name_and_tags/tags")
 _problem_detected_button = NodePath("HBoxContainer/problem_detected_button")
+_setup_version = NodePath("HBoxContainer/name_and_tags/tags/version/setup_version")
+_version_button = NodePath("HBoxContainer/name_and_tags/tags/version/setup_version")
 _label_name = NodePath("HBoxContainer/name_and_tags/name")
 _icon_texture = NodePath("HBoxContainer/icon")
 _remove_button = NodePath("HBoxContainer/remove_project")
@@ -238,7 +248,7 @@ _tag_scene = ExtResource("4_ogak0")
 z_index = 1
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
-text = " 4.4.1 "
+text = " 4.4.1     "
 
 [node name="background" type="Panel" parent="HBoxContainer/name_and_tags/tags/version" unique_id=401359081]
 z_index = -1
@@ -255,6 +265,35 @@ grow_vertical = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 theme_override_styles/panel = ExtResource("4_e77bd")
+
+[node name="TextureRect" type="TextureRect" parent="HBoxContainer/name_and_tags/tags/version" unique_id=1655674439]
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -13.0
+offset_top = -4.5
+offset_right = -5.0
+offset_bottom = 5.0
+grow_horizontal = 0
+grow_vertical = 2
+texture = ExtResource("6_5gk3a")
+expand_mode = 4
+stretch_mode = 5
+
+[node name="setup_version" type="Button" parent="HBoxContainer/name_and_tags/tags/version" unique_id=703413970]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = 0.029000001
+anchor_right = 1.0
+anchor_bottom = 1.088
+offset_top = 0.0069999695
+offset_bottom = 0.00399971
+grow_horizontal = 2
+grow_vertical = 2
+flat = true
 
 [node name="new_tag" type="Button" parent="HBoxContainer/name_and_tags/tags" unique_id=1965237965]
 layout_mode = 2

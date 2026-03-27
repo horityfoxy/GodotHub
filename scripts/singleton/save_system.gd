@@ -16,13 +16,19 @@ func add_project(path: String, project_name: String = "Unnamed Project") -> void
 			"path": clean_path,
 			"name": project_name,
 			"icon_override": "",
-			"tags": []
+			"tags": [],
+			"version": ""
 		}
 		save_projects()
 
 func update_project_name(project_id: String, new_name: String) -> void:
 	if _projects_data.has(project_id) and _projects_data[project_id].get("name") != new_name:
 		_projects_data[project_id]["name"] = new_name
+		save_projects()
+
+func update_project_version(project_id: String, new_version: String) -> void:
+	if _projects_data.has(project_id) and _projects_data[project_id].get("version") != new_version:
+		_projects_data[project_id]["version"] = new_version
 		save_projects()
 
 func remove_project(project_id: String) -> void:
@@ -47,6 +53,9 @@ func get_project_tags(project_id: String) -> Array:
 
 func get_project_name(project_id: String) -> String:
 	return _projects_data.get(project_id, {}).get("name", "Unnamed Project")
+
+func get_project_version(project_id: String) -> String:
+	return _projects_data.get(project_id, {}).get("version", "Unknown")
 
 # --- setters ---
 

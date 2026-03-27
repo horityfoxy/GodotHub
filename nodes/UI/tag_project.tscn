@@ -65,11 +65,14 @@ func spawn():
 	if window.has_signal(\"make_tag\"): window.make_tag.connect(_make_tag)
 	if window.has_signal(\"new_tag_color\"): window.new_tag_color.connect(set_color)
 	
+	EventBus.activate_window_or_switch.connect(_remove_tag)
+	
 	_spawn_make_window_point.add_child(window)
 	window.top_level = true
 	window.global_position = _spawn_make_window_point.global_position + Vector2(0, 4)
 
 func off_settings_window():
+	EventBus.activate_window_or_switch.disconnect(_remove_tag)
 	_spawn_make_window_point.get_child(0).queue_free()
 
 func _remove_tag():
@@ -80,6 +83,7 @@ func _remove_tag():
 
 func _make_tag():
 	var clean_name = _tag_text.strip_edges()
+	EventBus.activate_window_or_switch.disconnect(_remove_tag)
 	SaveSystem.add_tag(_project_id, clean_name, _color_tag)
 	tag_created.emit()
 "
