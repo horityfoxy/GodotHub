@@ -3,13 +3,16 @@
 [ext_resource type="StyleBox" uid="uid://08qpf6v4ihhn" path="res://src/themes/horityfox/panels/project_panels.tres" id="1_c0s5n"]
 [ext_resource type="Texture2D" uid="uid://bx40bofn7yy27" path="res://icon.svg" id="1_q602k"]
 [ext_resource type="Texture2D" uid="uid://e7wkwvbepdoa" path="res://src/sprites/drag_and_drop/drag_and_drop_icon.svg" id="3_u3hnx"]
+[ext_resource type="StyleBox" uid="uid://g13y3ylxb5cr" path="res://src/themes/horityfox/panels/icon_background.tres" id="4_0nbsl"]
 [ext_resource type="StyleBox" uid="uid://u521iyx6gro2" path="res://src/themes/horityfox/tags/version_tag.tres" id="4_e77bd"]
 [ext_resource type="PackedScene" uid="uid://c4dcycfjtp4yh" path="res://nodes/UI/tag_project.tscn" id="4_ogak0"]
+[ext_resource type="Shader" uid="uid://buyvb3en62nqv" path="res://scripts/shaders/blur_background.gdshader" id="5_0n7d3"]
 [ext_resource type="Texture2D" uid="uid://cualc1sqm0gbo" path="res://src/sprites/bin/bin_logo.svg" id="5_g1chl"]
 [ext_resource type="Theme" uid="uid://bme18nb43kckb" path="res://src/themes/horityfox/buttons/gray/gray_button.tres" id="5_u3hnx"]
 [ext_resource type="Texture2D" uid="uid://dtwh3afljtusf" path="res://src/sprites/settings/settings_logo.svg" id="6_5gk3a"]
 [ext_resource type="Theme" uid="uid://c06aoxshvcfhh" path="res://src/themes/horityfox/buttons/blue/blue_button.tres" id="6_x0pa5"]
 [ext_resource type="Theme" uid="uid://ikg57vrcper2" path="res://src/themes/horityfox/buttons/remove/remove_basic.tres" id="7_e77bd"]
+[ext_resource type="PackedScene" uid="uid://cumm6idjbbhh7" path="res://nodes/UI/hint.tscn" id="10_0nbsl"]
 [ext_resource type="PackedScene" uid="uid://bbyc6kphmjldi" path="res://nodes/UI/problem_detected_button.tscn" id="10_mid5l"]
 
 [sub_resource type="GDScript" id="GDScript_uyqn0"]
@@ -22,6 +25,7 @@ script/source = "extends panel_base
 @export var _problem_detected_button: Button
 @export var _setup_version : Button
 @export var _version_button : Button
+@export var _hint_panel : RichTextLabel
 
 var _project_path : String = \"\"
 var _godot_path : String = \"\"
@@ -71,6 +75,7 @@ func launch_project_in_editor(_args : PackedStringArray) -> void:
 	_update_godot_path()
 	if _godot_path.is_empty() or not FileAccess.file_exists(_godot_path):
 		printerr(\"ERROR: Godot version '\", _version, \"' not found or path is invalid: \", _godot_path)
+		_hint_panel.enable()
 		return
 	if _project_path == \"\":
 		printerr(\"ERROR: Project path is empty!\")
@@ -92,7 +97,7 @@ func _edit_mode_enable() -> void:
 func set_project_path(value : String) -> void: _project_path = value
 
 func setup_icon():
-	_icon_texture.setup()
+	_icon_texture.setup(_project_id)
 
 func remove() -> void:
 	SaveSystem.remove_project(_project_id)
@@ -104,8 +109,71 @@ func _get_id() -> String: return _project_id
 [sub_resource type="GDScript" id="GDScript_c0s5n"]
 script/source = "extends TextureRect
 
-func setup():
-	pass
+const DEFAULT_ICON_PATH = \"res://icon.svg\"
+
+@export var _edit_button : ColorRect
+
+func setup(project_id: String) -> void:
+	var project_data: Dictionary = SaveSystem.get_project_by_id(project_id)
+	_edit_button.set_id(project_id)
+	if project_data.is_empty():
+		_set_default_icon()
+		return
+	var icon_path: String = project_data.get(\"icon_override\", \"\")
+	
+	if icon_path.is_empty():
+		_set_default_icon()
+		return
+		
+	if not FileAccess.file_exists(icon_path):
+		printerr(\"icon was not found from: \", icon_path)
+		SaveSystem.set_project_icon(project_id, \"\")
+		_set_default_icon()
+		return
+	
+	if icon_path.begins_with(\"res://\") or icon_path.begins_with(\"user://\"):
+		texture = load(icon_path) as Texture2D
+	else:
+		var image := Image.load_from_file(icon_path)
+		if image: texture = ImageTexture.create_from_image(image)
+		else:
+			printerr(\"Can't load image: \", icon_path)
+			_set_default_icon()
+
+func _set_default_icon() -> void:
+	if ResourceLoader.exists(DEFAULT_ICON_PATH): 
+		texture = load(DEFAULT_ICON_PATH) as Texture2D
+	else: 
+		texture = null 
+"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_m0q7w"]
+shader = ExtResource("5_0n7d3")
+shader_parameter/blur_amount = 1.6000000760000002
+
+[sub_resource type="GDScript" id="GDScript_0n7d3"]
+script/source = "extends ColorRect
+
+var _edit_mode : bool = false
+var _id : String = \"\"
+
+func _ready() -> void:
+	EventBus.edit_button_pressed.connect(_enable_edit_mode)
+	hide()
+	mouse_filter = MOUSE_FILTER_IGNORE
+
+func _enable_edit_mode() -> void:
+	_edit_mode = not _edit_mode
+	visible = _edit_mode
+	mouse_filter = MOUSE_FILTER_STOP if _edit_mode else MOUSE_FILTER_IGNORE
+
+func _gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton:
+		if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+			EventBus.change_icon_required.emit(_id)
+
+func set_id(id : String) -> void:
+	_id = id
 "
 
 [sub_resource type="GDScript" id="GDScript_e77bd"]
@@ -171,7 +239,7 @@ func load_tag():
 	_show_create_tag_button()
 "
 
-[node name="project_1" type="Panel" unique_id=426653167 node_paths=PackedStringArray("_edit_button", "_run_button", "_version_label", "_tags_zones", "_problem_detected_button", "_setup_version", "_version_button", "_label_name", "_icon_texture", "_remove_button")]
+[node name="project_1" type="Panel" unique_id=426653167 node_paths=PackedStringArray("_edit_button", "_run_button", "_version_label", "_tags_zones", "_problem_detected_button", "_setup_version", "_version_button", "_hint_panel", "_label_name", "_icon_texture", "_remove_button")]
 custom_minimum_size = Vector2(0, 72)
 theme_override_styles/panel = ExtResource("1_c0s5n")
 script = SubResource("GDScript_uyqn0")
@@ -182,8 +250,9 @@ _tags_zones = NodePath("HBoxContainer/name_and_tags/tags")
 _problem_detected_button = NodePath("HBoxContainer/problem_detected_button")
 _setup_version = NodePath("HBoxContainer/name_and_tags/tags/version/setup_version")
 _version_button = NodePath("HBoxContainer/name_and_tags/tags/version/setup_version")
+_hint_panel = NodePath("HBoxContainer/run_project/hint")
 _label_name = NodePath("HBoxContainer/name_and_tags/name")
-_icon_texture = NodePath("HBoxContainer/icon")
+_icon_texture = NodePath("HBoxContainer/BG/icon")
 _remove_button = NodePath("HBoxContainer/remove_project")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=1006314450]
@@ -200,24 +269,58 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 8
 
-[node name="icon" type="TextureRect" parent="HBoxContainer" unique_id=416449460]
+[node name="BG" type="Panel" parent="HBoxContainer" unique_id=1405781361]
 custom_minimum_size = Vector2(56, 56)
 layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_styles/panel = ExtResource("4_0nbsl")
+
+[node name="icon" type="TextureRect" parent="HBoxContainer/BG" unique_id=416449460 node_paths=PackedStringArray("_edit_button")]
+custom_minimum_size = Vector2(34, 34)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -22.0
+offset_top = -23.5
+offset_right = 22.0
+offset_bottom = 23.5
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
 texture = ExtResource("1_q602k")
 expand_mode = 4
 stretch_mode = 5
 script = SubResource("GDScript_c0s5n")
+_edit_button = NodePath("blur")
 
-[node name="edit_symbol" type="TextureRect" parent="HBoxContainer/icon" unique_id=804720636]
+[node name="blur" type="ColorRect" parent="HBoxContainer/BG/icon" unique_id=1622159282]
 visible = false
+z_index = 1
+material = SubResource("ShaderMaterial_m0q7w")
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = 8.0
-offset_bottom = -8.0
+offset_top = 1.0
+offset_bottom = -1.0
 grow_horizontal = 2
 grow_vertical = 2
+color = Color(0.03529412, 0.03529412, 0.03529412, 0.3372549)
+script = SubResource("GDScript_0n7d3")
+
+[node name="edit_symbol" type="TextureRect" parent="HBoxContainer/BG/icon/blur" unique_id=804720636]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 texture = ExtResource("3_u3hnx")
 expand_mode = 2
 stretch_mode = 5
@@ -241,6 +344,7 @@ selection_enabled = true
 layout_mode = 2
 theme_override_constants/separation = 4
 script = SubResource("GDScript_e77bd")
+max_count = 5
 _new_tag_button = NodePath("new_tag")
 _tag_scene = ExtResource("4_ogak0")
 
@@ -330,7 +434,18 @@ layout_mode = 2
 size_flags_vertical = 4
 theme = ExtResource("5_u3hnx")
 theme_override_font_sizes/font_size = 14
-text = "Запустить"
+text = "#btn_launch"
+
+[node name="hint" parent="HBoxContainer/run_project" unique_id=820097050 instance=ExtResource("10_0nbsl")]
+visible = false
+layout_mode = 1
+offset_left = -165.0
+offset_top = -18.0
+offset_right = -8.0
+offset_bottom = 18.0
+grow_vertical = 2
+text = "[b]Ошибка[/b]
+Не найдено нужной версии игрового движка"
 
 [node name="edit_project" type="Button" parent="HBoxContainer" unique_id=1796640064]
 custom_minimum_size = Vector2(0, 24)
@@ -338,7 +453,7 @@ layout_mode = 2
 size_flags_vertical = 4
 theme = ExtResource("6_x0pa5")
 theme_override_font_sizes/font_size = 14
-text = "Редактировать"
+text = "#btn_edit"
 
 [node name="problem_detected_button" parent="HBoxContainer" unique_id=1963035364 instance=ExtResource("10_mid5l")]
 layout_mode = 2

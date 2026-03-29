@@ -14,6 +14,7 @@ config/name="Godot Hub"
 run/main_scene="uid://bn5m56kyvj02p"
 config/custom_user_dir_name="GodotHub"
 config/features=PackedStringArray("4.6", "Forward Plus")
+boot_splash/show_image=false
 config/icon="uid://bx40bofn7yy27"
 
 [autoload]
@@ -40,6 +41,10 @@ ui_accept={
 , Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":0,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":4194310,"physical_keycode":0,"key_label":0,"unicode":0,"location":0,"echo":false,"script":null)
 ]
 }
+
+[internationalization]
+
+locale/translations=PackedStringArray("res://src/languages/languages.de.translation", "res://src/languages/languages.en.translation", "res://src/languages/languages.es.translation", "res://src/languages/languages.fr.translation", "res://src/languages/languages.it.translation", "res://src/languages/languages.ja.translation", "res://src/languages/languages.ko.translation", "res://src/languages/languages.pl.translation", "res://src/languages/languages.pt.translation", "res://src/languages/languages.pt_BR.translation", "res://src/languages/languages.ru.translation", "res://src/languages/languages.tr.translation", "res://src/languages/languages.uk.translation", "res://src/languages/languages.zh.translation")
 
 [physics]
 

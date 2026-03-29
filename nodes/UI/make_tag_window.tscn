@@ -174,7 +174,7 @@ z_index = 3
 layout_mode = 2
 size_flags_horizontal = 3
 theme = ExtResource("3_lksv0")
-placeholder_text = " Новый тег..."
+placeholder_text = "#input_new_tag"
 max_length = 14
 
 [node name="remove" type="Button" parent="VBoxContainer/HBoxContainer" unique_id=340720532]

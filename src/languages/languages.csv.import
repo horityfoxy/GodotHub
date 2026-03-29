@@ -1,0 +1,19 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://b4ab6tomxnomv"
+
+[deps]
+
+files=["res://src/languages/languages.ru.translation", "res://src/languages/languages.en.translation", "res://src/languages/languages.zh.translation", "res://src/languages/languages.es.translation", "res://src/languages/languages.pt.translation", "res://src/languages/languages.pt_BR.translation", "res://src/languages/languages.de.translation", "res://src/languages/languages.ja.translation", "res://src/languages/languages.fr.translation", "res://src/languages/languages.ko.translation", "res://src/languages/languages.pl.translation", "res://src/languages/languages.tr.translation", "res://src/languages/languages.uk.translation", "res://src/languages/languages.it.translation"]
+
+source_file="res://src/languages/languages.csv"
+dest_files=["res://src/languages/languages.ru.translation", "res://src/languages/languages.en.translation", "res://src/languages/languages.zh.translation", "res://src/languages/languages.es.translation", "res://src/languages/languages.pt.translation", "res://src/languages/languages.pt_BR.translation", "res://src/languages/languages.de.translation", "res://src/languages/languages.ja.translation", "res://src/languages/languages.fr.translation", "res://src/languages/languages.ko.translation", "res://src/languages/languages.pl.translation", "res://src/languages/languages.tr.translation", "res://src/languages/languages.uk.translation", "res://src/languages/languages.it.translation"]
+
+[params]
+
+compress=1
+delimiter=0
+unescape_keys=false
+unescape_translations=true
