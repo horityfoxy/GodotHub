@@ -45,4 +45,5 @@ signal fix_path_activate(id : String, is_engine_mode)
 signal version_change(id : String)
 
 ## ICONS CHANGER SIGNAL ##
+@warning_ignore("unused_signal")
 signal change_icon_required(id : String)

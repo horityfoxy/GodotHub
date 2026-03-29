@@ -13,6 +13,7 @@
 [ext_resource type="FontFile" uid="uid://crxptqsk1pq64" path="res://src/fonts/LINESeedJP/LINESeedJP-Bold.ttf" id="10_h0f1k"]
 [ext_resource type="PackedScene" uid="uid://qi7f60i7f20r" path="res://nodes/UI/work_in_progress_window.tscn" id="12_gmty7"]
 [ext_resource type="Theme" uid="uid://d24t8jknpr3a4" path="res://src/themes/fonts/header.tres" id="14_01b7x"]
+[ext_resource type="FontFile" uid="uid://cs04tl0aomfeb" path="res://src/fonts/LINESeedJP/LINESeedJP-Thin.ttf" id="15_2toya"]
 [ext_resource type="Script" uid="uid://b3y1cfpuvbhgw" path="res://scripts/buttons/button_view_window.gd" id="15_c3m70"]
 [ext_resource type="StyleBox" uid="uid://bmscpcswrl7cn" path="res://src/themes/horityfox/panels/view_window.tres" id="15_heg84"]
 [ext_resource type="FontFile" uid="uid://cev2ga8asvqgc" path="res://src/fonts/LINESeedJP/LINESeedJP-Regular.ttf" id="16_ecu0m"]
@@ -618,6 +619,46 @@ func on_close_settings_button_pressed() -> void:
 
 func disable():
 	close_window.emit()
+"
+
+[sub_resource type="GDScript" id="GDScript_u7ggc"]
+script/source = "extends OptionButton
+
+const LOCALE_MAP: Dictionary = {
+	0: \"ru\",      # Русский
+	1: \"en\",      # English
+	2: \"zh\",      # 中文 (chinese)
+	3: \"es\",      # Español
+	4: \"pt\",      # Português
+	5: \"pt_BR\",   # Português (BR)
+	6: \"de\",      # Deutsch
+	7: \"ja\",      # 日本語 (japan)
+	8: \"fr\",      # Français
+	9: \"ko\",      # 한국어 (korean)
+	10: \"pl\",     # Polski
+	11: \"tr\",     # Türkçe
+	12: \"uk\",     # Українська
+	13: \"it\"      # Italiano
+}
+
+func _ready() -> void:
+	if not item_selected.is_connected(_on_item_selected):
+		item_selected.connect(_on_item_selected)
+	var saved_locale: String = SaveSystem.get_app_locale()
+	for id in LOCALE_MAP.keys():
+		if LOCALE_MAP[id] == saved_locale:
+			var item_index: int = get_item_index(id)
+			if item_index != -1:
+				select(item_index)
+			break
+
+func _on_item_selected(index: int) -> void:
+	var item_id: int = get_item_id(index)
+	if LOCALE_MAP.has(item_id):
+		var locale_code: String = LOCALE_MAP[item_id]
+		SaveSystem.set_app_locale(locale_code)
+	else:
+		push_warning(\"locale ID not found in LOCALE_MAP: \", item_id)
 "
 
 [sub_resource type="GDScript" id="GDScript_t4bcl"]
@@ -1607,10 +1648,14 @@ script/source = "extends Control
 signal close_window
 
 var _id : String = \"\"
+var _path : String = \"\"
 
 @export_category(\"Buttons\")
 @export var _set_icon_button : Button
 @export var _close_button : Button
+@export var _done : Button
+
+@export var _icon_preview : TextureRect
 
 @export_category(\"Labels\")
 @export var _path_hint : Label
@@ -1620,32 +1665,144 @@ var _id : String = \"\"
 
 func _ready() -> void:
 	_close_button.pressed.connect(disable)
+	_set_icon_button.pressed.connect(_enable_scan)
+	_done.pressed.connect(_set_icon_finally)
+	parser_system.image_loaded.connect(_on_image_loaded)
+	_done.hide()
 	hide()
 
 func _icon_change_enable(_project_id : String) -> void:
 	show()
 	_id = _project_id
+	_path = \"\"
+	_done.hide()
 	_path_hint.text = \".../\" + SaveSystem.get_project_name(_id)
-	print(_id)
 
 func disable() -> void:
 	_id = \"\"
+	_path = \"\"
+	_icon_preview.reset()
 	hide()
 	close_window.emit()
+
+func _enable_scan() -> void:
+	parser_system.open_image_selector()
+
+func _on_image_loaded(new_path: String) -> void:
+	_path = new_path
+	_done.show()
+
+func _set_icon_finally() -> void:
+	EventBus.edit_button_pressed.emit()
+	if _id != \"\" and _path != \"\":
+		SaveSystem.set_project_icon(_id, _path)
+		EventBus.ui_project_list_updated.emit()
+	disable()
 "
 
 [sub_resource type="GDScript" id="GDScript_81hqf"]
 script/source = "extends Node
 
+signal image_loaded(path: String)
 
-# Called when the node enters the scene tree for the first time.
+@export var _icon_preview: TextureRect
+
+var _file_dialog: FileDialog
+
 func _ready() -> void:
-	pass # Replace with function body.
+	setup_file_dialog()
 
+func setup_file_dialog() -> void:
+	_file_dialog = FileDialog.new()
+	_file_dialog.use_native_dialog = true 
+	_file_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
+	_file_dialog.access = FileDialog.ACCESS_FILESYSTEM
+	
+	_file_dialog.filters = PackedStringArray([
+		\"*.png, *.jpg, *.jpeg, *.webp, *.svg, *.bmp, *.tga\"
+	])
+	
+	_file_dialog.file_selected.connect(_on_file_selected)
+	add_child(_file_dialog)
 
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta: float) -> void:
-	pass
+func open_image_selector() -> void:
+	if _file_dialog: 
+		_file_dialog.popup_centered()
+
+func _on_file_selected(path: String) -> void:
+	_load_external_image(path)
+
+func _load_external_image(path: String) -> void:
+	if not FileAccess.file_exists(path):
+		printerr(\"ERROR: File not found: \", path)
+		return
+		
+	var image := Image.load_from_file(path)
+	
+	if image:
+		if _icon_preview and _icon_preview.has_method(\"change_texture\"):
+			_icon_preview.change_texture(image)
+		image_loaded.emit(path)
+	else:
+		printerr(\"ERROR: Can't load image \", path)
+"
+
+[sub_resource type="GDScript" id="GDScript_fuggr"]
+script/source = "extends TextureRect
+
+const DEFAULT_ICON: Texture2D = preload(\"res://src/sprites/drag_and_drop/icon.svg\")
+
+func change_texture(image: Image) -> void:
+	if image:
+		var new_texture := ImageTexture.create_from_image(image)
+		texture = new_texture
+		modulate = Color(\"#ffffff\") 
+	else:
+		printerr(\"ERROR: In change_texture send empty image\")
+
+func reset() -> void:
+	texture = DEFAULT_ICON
+	modulate = Color(\"#8b8b8b\")
+"
+
+[sub_resource type="GDScript" id="GDScript_fmw4v"]
+script/source = "extends Control
+
+@export_category(\"Systems\")
+@export var parser_system: Node 
+
+var _is_can_drop: bool = false
+
+const SUPPORTED_EXTENSIONS: Array[String] = [
+	\"png\", \"jpg\", \"jpeg\", \"webp\", \"svg\", \"bmp\", \"tga\"
+]
+
+func _ready() -> void:
+	_is_can_drop = true
+	get_window().files_dropped.connect(_on_files_dropped)
+
+func can_drop(value: bool) -> void:
+	_is_can_drop = value
+
+func _on_files_dropped(files: PackedStringArray) -> void:
+	if not _is_can_drop: return
+	
+	# Используем глобальные координаты!
+	if get_global_rect().has_point(get_global_mouse_position()):
+		_handle_drop_logic(files)
+
+func _handle_drop_logic(files: PackedStringArray) -> void:
+	if files.is_empty(): return
+	
+	var raw_path: String = files[0]
+	var clean_path: String = raw_path.replace(\"\\\\\", \"/\").simplify_path()
+	if FileAccess.file_exists(clean_path):
+		var extension: String = clean_path.get_extension().to_lower()
+		if extension in SUPPORTED_EXTENSIONS:
+			if parser_system and parser_system.has_method(\"_load_external_image\"):
+				parser_system._load_external_image(clean_path)
+		else:
+			printerr(\"ERROR: File format doesn't supported: (\", extension, \")\")
 "
 
 [node name="main" type="CanvasLayer" unique_id=2071414279]
@@ -1983,6 +2140,7 @@ horizontal_alignment = 1
 uppercase = true
 
 [node name="popup_window" type="Control" parent="." unique_id=182114234 node_paths=PackedStringArray("_blur", "_drag_and_drop_window", "_settings_window", "_get_new_version_window", "_fix_path_window", "_swich_project_version", "_new_icon_window")]
+visible = false
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -2236,14 +2394,19 @@ anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 18.0
-offset_top = 17.0
+offset_top = 1.0
 offset_right = -18.0
+offset_bottom = -1.0
 grow_horizontal = 2
 grow_vertical = 2
 
 [node name="VBoxContainer" type="VBoxContainer" parent="popup_window/settings/settings_window/VBoxContainer2/BG/VBoxContainer" unique_id=534078114]
 layout_mode = 2
 size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="Control2" type="Control" parent="popup_window/settings/settings_window/VBoxContainer2/BG/VBoxContainer/VBoxContainer" unique_id=1406106689]
+layout_mode = 2
 
 [node name="language" type="HBoxContainer" parent="popup_window/settings/settings_window/VBoxContainer2/BG/VBoxContainer/VBoxContainer" unique_id=1534520518]
 layout_mode = 2
@@ -2256,15 +2419,42 @@ text = "#label_language"
 
 [node name="OptionButton" type="OptionButton" parent="popup_window/settings/settings_window/VBoxContainer2/BG/VBoxContainer/VBoxContainer/language" unique_id=1569932035]
 layout_mode = 2
-theme_override_font_sizes/font_size = 14
-disabled = true
 alignment = 2
 selected = 0
-item_count = 1
-popup/item_0/text = "Русский"
-popup/item_0/id = 0
+fit_to_longest_item = false
+item_count = 14
+popup/item_0/text = "English"
+popup/item_0/id = 1
+popup/item_1/text = "Русский"
+popup/item_1/id = 0
+popup/item_2/text = "Українська"
+popup/item_2/id = 12
+popup/item_3/text = "中文"
+popup/item_3/id = 2
+popup/item_4/text = "Español"
+popup/item_4/id = 3
+popup/item_5/text = "Português"
+popup/item_5/id = 4
+popup/item_6/text = "Português (BR)"
+popup/item_6/id = 5
+popup/item_7/text = "Deutsch"
+popup/item_7/id = 6
+popup/item_8/text = "日本語"
+popup/item_8/id = 7
+popup/item_9/text = "Français"
+popup/item_9/id = 8
+popup/item_10/text = "한국어"
+popup/item_10/id = 9
+popup/item_11/text = "Polski"
+popup/item_11/id = 10
+popup/item_12/text = "Türkçe"
+popup/item_12/id = 11
+popup/item_13/text = "Italiano"
+popup/item_13/id = 13
+script = SubResource("GDScript_u7ggc")
 
 [node name="theme" type="HBoxContainer" parent="popup_window/settings/settings_window/VBoxContainer2/BG/VBoxContainer/VBoxContainer" unique_id=1705096437]
+visible = false
 layout_mode = 2
 
 [node name="Label" type="Label" parent="popup_window/settings/settings_window/VBoxContainer2/BG/VBoxContainer/VBoxContainer/theme" unique_id=185104013]
@@ -2283,6 +2473,22 @@ selected = 0
 item_count = 1
 popup/item_0/text = "HorityFox"
 popup/item_0/id = 0
+
+[node name="Control" type="Control" parent="popup_window/settings/settings_window/VBoxContainer2/BG/VBoxContainer/VBoxContainer" unique_id=1576311424]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Label" type="Label" parent="popup_window/settings/settings_window/VBoxContainer2/BG/VBoxContainer/VBoxContainer" unique_id=687403466]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.41981313, 0.41981313, 0.4198131, 1)
+theme_override_fonts/font = ExtResource("15_2toya")
+theme_override_font_sizes/font_size = 12
+text = "#AI_attantion"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Control3" type="Control" parent="popup_window/settings/settings_window/VBoxContainer2/BG/VBoxContainer/VBoxContainer" unique_id=1787219302]
+layout_mode = 2
 
 [node name="HBoxContainer" type="HBoxContainer" parent="popup_window/settings/settings_window/VBoxContainer2" unique_id=1776253442]
 layout_mode = 2
@@ -3214,7 +3420,8 @@ text = "#btn_update_version"
 [node name="spacer2" type="Control" parent="popup_window/swich_project_version/chosing_another_version_window/VBoxContainer" unique_id=1775603978]
 layout_mode = 2
 
-[node name="new_icon_window" type="Control" parent="popup_window" unique_id=1329684561 node_paths=PackedStringArray("_set_icon_button", "_close_button", "_path_hint", "parser_system")]
+[node name="new_icon_window" type="Control" parent="popup_window" unique_id=1329684561 node_paths=PackedStringArray("_set_icon_button", "_close_button", "_done", "_icon_preview", "_path_hint", "parser_system")]
+visible = false
 z_index = 1
 layout_mode = 1
 anchors_preset = 15
@@ -3223,13 +3430,16 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = SubResource("GDScript_m3ofo")
-_set_icon_button = NodePath("window/HBoxContainer/VBoxContainer/HBoxContainer/set_icon")
+_set_icon_button = NodePath("window/HBoxContainer/VBoxContainer/HBoxContainer/locate")
 _close_button = NodePath("window/HBoxContainer/VBoxContainer/HBoxContainer/close")
+_done = NodePath("window/HBoxContainer/VBoxContainer/HBoxContainer/next")
+_icon_preview = NodePath("window/HBoxContainer/BG/icon")
 _path_hint = NodePath("window/HBoxContainer/VBoxContainer/HBoxContainer/path_hint")
 parser_system = NodePath("icon_parcer")
 
-[node name="icon_parcer" type="Node" parent="popup_window/new_icon_window" unique_id=92458862]
+[node name="icon_parcer" type="Node" parent="popup_window/new_icon_window" unique_id=92458862 node_paths=PackedStringArray("_icon_preview")]
 script = SubResource("GDScript_81hqf")
+_icon_preview = NodePath("../window/HBoxContainer/BG/icon")
 
 [node name="window" type="Panel" parent="popup_window/new_icon_window" unique_id=189781026]
 layout_mode = 1
@@ -3282,6 +3492,7 @@ grow_vertical = 2
 texture = ExtResource("24_1n1q0")
 expand_mode = 4
 stretch_mode = 5
+script = SubResource("GDScript_fuggr")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="popup_window/new_icon_window/window/HBoxContainer" unique_id=606990788]
 layout_mode = 2
@@ -3295,13 +3506,13 @@ layout_mode = 2
 layout_mode = 2
 theme_override_fonts/font = ExtResource("10_h0f1k")
 theme_override_font_sizes/font_size = 16
-text = "Перетащите иконку в зону слева или выберите ее с диска."
+text = "#label_take_new_icon"
 
 [node name="error_description" type="Label" parent="popup_window/new_icon_window/window/HBoxContainer/VBoxContainer" unique_id=154861414]
 custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 size_flags_vertical = 3
-text = "К сожалению, в проектах, основанных на новых версиях Godot Engine автоматически взять иконку не получится. Это связано с введением UID для иконок в project.godot"
+text = "#label_UID_attantion"
 autowrap_mode = 2
 
 [node name="HBoxContainer" type="HBoxContainer" parent="popup_window/new_icon_window/window/HBoxContainer/VBoxContainer" unique_id=1293986421]
@@ -3325,17 +3536,34 @@ theme = ExtResource("8_t4bcl")
 theme_override_font_sizes/font_size = 14
 text = "#btn_close"
 
-[node name="set_icon" type="Button" parent="popup_window/new_icon_window/window/HBoxContainer/VBoxContainer/HBoxContainer" unique_id=1811894741]
+[node name="locate" type="Button" parent="popup_window/new_icon_window/window/HBoxContainer/VBoxContainer/HBoxContainer" unique_id=1578116932]
+layout_mode = 2
+theme = ExtResource("8_t4bcl")
+theme_override_font_sizes/font_size = 14
+text = "#btn_locate"
+
+[node name="next" type="Button" parent="popup_window/new_icon_window/window/HBoxContainer/VBoxContainer/HBoxContainer" unique_id=1811894741]
 layout_mode = 2
 theme = ExtResource("8_c3m70")
 theme_override_font_sizes/font_size = 14
-text = "#btn_locate"
+text = "#btn_next"
 
 [node name="spacer2" type="Control" parent="popup_window/new_icon_window/window/HBoxContainer/VBoxContainer" unique_id=1192505304]
 layout_mode = 2
 
 [node name="Control" type="Control" parent="popup_window/new_icon_window/window/HBoxContainer" unique_id=1412545283]
 layout_mode = 2
+
+[node name="drag_and_drop_zone" type="Control" parent="popup_window/new_icon_window/window" unique_id=31879414 node_paths=PackedStringArray("parser_system")]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = -319.0
+grow_horizontal = 2
+grow_vertical = 2
+script = SubResource("GDScript_fmw4v")
+parser_system = NodePath("../../icon_parcer")
 
 [node name="FileDialog" type="FileDialog" parent="popup_window" unique_id=1338183012]
 oversampling_override = 1.0
