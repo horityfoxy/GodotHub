@@ -51,3 +51,5 @@ signal change_icon_required(id : String)
 ## NOTIFICATIONS SIGNALS ##
 @warning_ignore("unused_signal")
 signal new_version_godot_hub_found
+@warning_ignore("unused_signal")
+signal new_version_godot_hub_install_start

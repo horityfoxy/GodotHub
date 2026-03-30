@@ -74,19 +74,29 @@ func _launch_engine_version() -> void:
 	else: printerr(\"Error: Godot Engine process didn't start.\")
 
 func _is_engine_running(exe_path: String) -> bool:
-	if exe_path.is_empty() or not FileAccess.file_exists(exe_path): return false
+	if exe_path.is_empty() or not FileAccess.file_exists(exe_path): 
+		return false
 	var is_running := false
 	var output := []
-	
+	var my_pid = OS.get_process_id()
 	match OS.get_name():
 		\"Windows\":
 			var win_path = exe_path.replace(\"/\", \"\\\\\")
 			var ps_cmd = \"Get-Process | Where-Object { $_.Path -eq '%s' } | Select-Object -ExpandProperty Id\" % win_path
 			OS.execute(\"powershell.exe\", [\"-Command\", ps_cmd], output)
-			if output.size() > 0 and not output[0].strip_edges().is_empty(): is_running = true
+			if output.size() > 0 and not output[0].strip_edges().is_empty(): 
+				is_running = true
 		\"Linux\", \"macOS\", \"FreeBSD\":
 			OS.execute(\"pgrep\", [\"-f\", exe_path], output)
-			if output.size() > 0 and not output[0].strip_edges().is_empty(): is_running = true
+			
+			if output.size() > 0:
+				var pids = output[0].split(\"\\n\", false)
+				for pid_str in pids:
+					var found_pid = pid_str.strip_edges().to_int()
+					if found_pid > 0 and found_pid != my_pid:
+						is_running = true
+						break
+						
 	return is_running
 "
 

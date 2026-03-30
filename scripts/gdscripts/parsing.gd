@@ -82,14 +82,15 @@ func update_ui() -> void:
 func _process_release_assets(release_data: Dictionary) -> void:
 	var assets = release_data.get("assets", [])
 	var version_tag = release_data.get("tag_name", "Unknown")
-	
 	for asset in assets:
 		var file_name: String = asset.get("name", "")
 		var url: String = asset.get("browser_download_url", "")
 		if file_name.match("Godot_v*-stable_win64.exe.zip"):
 			windows_releases.append({"version": version_tag, "url": url})
-		elif file_name.match("Godot_v*-stable_linux.x86_64.zip"):
-			linux_releases.append({"version": version_tag, "url": url})
+		elif (file_name.match("Godot_v*-stable_linux.x86_64.zip") or \
+			  file_name.match("Godot_v*-stable_x11.64.zip")):
+			if not file_name.ends_with(".tar.xz"):
+				linux_releases.append({"version": version_tag, "url": url})
 
 func _display_releases(data_list: Array, active_downloads: Array = []) -> void:
 	for item in data_list:
@@ -116,7 +117,6 @@ func make_file_executable(file_path: String) -> void:
 	if OS.get_name() == "Linux" or OS.get_name() == "macOS":
 		var output = []
 		OS.execute("chmod", ["+x", file_path], output)
-		print("Права на исполнение выданы для: ", file_path)
 
 func _version_to_int_array(version_string: String) -> Array:
 	var clean = version_string.get_slice("-", 0).replace("v", "")

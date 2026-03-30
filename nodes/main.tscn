@@ -747,13 +747,27 @@ func _on_api_response(_result: int, response_code: int, _headers: PackedStringAr
 		if json and json.has(\"tag_name\"):
 			var latest_version = json[\"tag_name\"].trim_prefix(\"v\")
 			if _is_version_newer(latest_version, VersionControl.version):
-				print(\"Update found: v\", latest_version)
-				_latest_release_data = json
-				update_button.show()
-				EventBus.new_version_godot_hub_found.emit()
-				if not update_button.pressed.is_connected(_on_update_button_pressed):
-					update_button.pressed.connect(_on_update_button_pressed)
+				var platform_asset = _find_platform_asset(json)
+				if platform_asset != {}:
+					print(\"Update was found: v\", latest_version)
+					_latest_release_data = json
+					update_button.show()
+					EventBus.new_version_godot_hub_found.emit()
+					if not update_button.pressed.is_connected(_on_update_button_pressed):
+						update_button.pressed.connect(_on_update_button_pressed)
+				else: print(\"New version avaible but not download yet.\")
 	else: push_error(\"API Error: \", response_code)
+
+func _find_platform_asset(json_data: Dictionary) -> Dictionary:
+	if not json_data.has(\"assets\"): return {}
+	var current_os = OS.get_name()
+	var target_keyword = \"Windows\" if current_os == \"Windows\" else \"Linux\"
+	for asset in json_data[\"assets\"]:
+		var asset_name = asset.get(\"name\", \"\")
+		if asset_name.contains(target_keyword):
+			return asset
+	
+	return {}
 
 func _is_version_newer(latest: String, current: String) -> bool:
 	var l_parts = latest.split(\".\")
@@ -772,6 +786,7 @@ func _on_update_button_pressed() -> void:
 	_start_download(_latest_release_data)
 
 func _start_download(json_data: Dictionary) -> void:
+	progress_updated.emit(0.0)
 	if not json_data.has(\"assets\") or json_data[\"assets\"].size() == 0:
 		push_error(\"No assets in release.\")
 		return
@@ -799,7 +814,7 @@ func _process(_delta: float) -> void:
 		var downloaded = download_request.get_downloaded_bytes()
 		var total = download_request.get_body_size()
 		var percent = (float(downloaded) / float(total)) * 90.0
-		progress_updated.emit(percent)
+		if percent: progress_updated.emit(percent)
 
 func _unpack_and_install() -> void:
 	var base_dir = OS.get_executable_path().get_base_dir()
@@ -809,7 +824,7 @@ func _unpack_and_install() -> void:
 	DirAccess.make_dir_recursive_absolute(temp_extract_dir)
 	var reader = ZIPReader.new()
 	if reader.open(update_zip_path) != OK:
-		push_error(\"Не удалось открыть ZIP-архив.\")
+		push_error(\"Can't open zip archive.\")
 		return
 	var files = reader.get_files()
 	var total_files = files.size()
@@ -2199,7 +2214,6 @@ color = Color(0.03529412, 0.03529412, 0.03529412, 0.3372549)
 script = SubResource("GDScript_cmhxe")
 
 [node name="drag_and_drop_project" type="Control" parent="popup_window" unique_id=1795121393 node_paths=PackedStringArray("_close_window_button", "_drag_and_drop_window")]
-visible = false
 z_index = 1
 layout_mode = 1
 anchors_preset = 15
@@ -2361,7 +2375,6 @@ layout_mode = 1
 script = null
 
 [node name="settings" type="Control" parent="popup_window" unique_id=1532549054 node_paths=PackedStringArray("_settings_window")]
-visible = false
 z_index = 1
 layout_mode = 1
 anchors_preset = 15
@@ -2540,7 +2553,6 @@ layout_mode = 1
 layout_mode = 2
 
 [node name="about_window" type="Panel" parent="popup_window/settings" unique_id=266747320 node_paths=PackedStringArray("_view_window", "_godot_hub_button", "_lineseedjp_button", "_godot_engine_button", "_about_program_button", "_close_about_window_button", "_update_button")]
-visible = false
 custom_minimum_size = Vector2(600, 388)
 layout_mode = 1
 anchors_preset = -1
@@ -2780,6 +2792,7 @@ theme = ExtResource("8_t4bcl")
 text = "#btn_yes"
 
 [node name="download_godot_window" type="Control" parent="popup_window" unique_id=9572961 node_paths=PackedStringArray("control_bridge", "_close_button")]
+visible = false
 z_index = 1
 layout_mode = 1
 anchors_preset = 15
