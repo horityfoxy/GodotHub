@@ -783,6 +783,7 @@ func _is_version_newer(latest: String, current: String) -> bool:
 func _on_update_button_pressed() -> void:
 	update_button.disabled = true
 	update_button.text = \"  \"
+	EventBus.new_version_godot_hub_install_start.emit()
 	_start_download(_latest_release_data)
 
 func _start_download(json_data: Dictionary) -> void:
@@ -902,32 +903,28 @@ Remove-Item $MyInvocation.MyCommand.Path -Force
 	])
 
 func _create_linux_sh(base_dir: String, temp_dir: String, exe_name: String) -> void:
-	var sh_path = base_dir.path_join(\"updater.sh\")
+	var sh_path = ProjectSettings.globalize_path(base_dir.path_join(\"updater.sh\"))
 	var my_pid = OS.get_process_id()
-	var exe_full = base_dir.path_join(exe_name)
+	var exe_full = ProjectSettings.globalize_path(base_dir.path_join(exe_name))
+	var global_temp_dir = ProjectSettings.globalize_path(temp_dir)
+	var global_base_dir = ProjectSettings.globalize_path(base_dir)
 	var sh_content = \"\"\"#!/bin/bash
-#
 while kill -0 %d 2>/dev/null; do
-    sleep 1
+	sleep 1
 done
 cp -rf \"%s/\"* \"%s/\"
 rm -rf \"%s\"
 chmod +x \"%s\"
 \"%s\" &
 rm -- \"$0\"
-\"\"\" % [my_pid, temp_dir, base_dir, temp_dir, exe_full, exe_full]
-
+\"\"\" % [my_pid, global_temp_dir, global_base_dir, global_temp_dir, exe_full, exe_full]
 	var f = FileAccess.open(sh_path, FileAccess.WRITE)
 	if f:
 		f.store_string(sh_content)
 		f.close()
-		
-	# Делаем сам скрипт исполняемым
 	var output = []
 	OS.execute(\"chmod\", [\"+x\", sh_path], output)
-	
-	# Запускаем скрипт
-	OS.create_process(\"/bin/bash\", [sh_path])
+	OS.create_process(\"nohup\", [\"/bin/bash\", sh_path], false)
 "
 
 [sub_resource type="GDScript" id="GDScript_bunx7"]
