@@ -27,8 +27,8 @@ func set_icon(value : Texture2D) -> void:
 func remove() -> void:
 	queue_free()
 
-func set_strikethrough_text():
+func set_strikethrough_text() -> void:
 	_label_name.text = "[s]" + _normal_text + "[/s]"
 
-func set_destroy_icon():
+func set_destroy_icon() -> void:
 	_icon_texture.modulate = Color("ffffff78")

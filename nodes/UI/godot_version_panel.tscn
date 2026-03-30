@@ -6,6 +6,7 @@
 [ext_resource type="Texture2D" uid="uid://cualc1sqm0gbo" path="res://src/sprites/bin/bin_logo.svg" id="4_gwg10"]
 [ext_resource type="PackedScene" uid="uid://cumm6idjbbhh7" path="res://nodes/UI/hint.tscn" id="5_aoypn"]
 [ext_resource type="Theme" uid="uid://c06aoxshvcfhh" path="res://src/themes/horityfox/buttons/blue/blue_button.tres" id="5_ompp8"]
+[ext_resource type="Shader" uid="uid://dnx6aypr1wjwy" path="res://scripts/shaders/simple_circle.gdshader" id="6_gwg10"]
 [ext_resource type="PackedScene" uid="uid://bbyc6kphmjldi" path="res://nodes/UI/problem_detected_button.tscn" id="7_vrk3i"]
 
 [sub_resource type="GDScript" id="GDScript_2r1el"]
@@ -16,6 +17,7 @@ var _version_id: String = \"\"
 @export var _launch_button: Button
 @export var _problem_detected_button: Button
 @export var _hint: RichTextLabel
+@export var _texture_bar : TextureProgressBar
 
 func _ready() -> void:
 	_launch_button.disabled = true
@@ -41,13 +43,20 @@ func _check_engine_path() -> void:
 func remove() -> void:
 	if not _version_id.is_empty():
 		var godot_path = VersionControl.get_godot_path(_version_id)
+		
 		if _is_engine_running(godot_path):
 			printerr(\"ERROR: Godot Engine (%s) is running now.\" % _version_id)
 			if _hint: _hint.enable()
 			return 
+		_launch_button.disabled = true
+		_remove_button.disable()
+		_texture_bar.show()
+		await VersionControl.remove_engine_folder_async(_version_id, _update_deletion_progress)
 		_delete_version_data(_version_id)
-		VersionControl.remove_engine_folder(_version_id)
 	super()
+
+func _update_deletion_progress(percent: float) -> void:
+	_texture_bar.update_progress(percent)
 
 func _delete_version_data(v_id: String) -> void:
 	if VersionControl._versions_data.has(v_id):
@@ -65,19 +74,41 @@ func _launch_engine_version() -> void:
 	else: printerr(\"Error: Godot Engine process didn't start.\")
 
 func _is_engine_running(exe_path: String) -> bool:
-	if exe_path.is_empty() or not FileAccess.file_exists(exe_path): return false
+	if exe_path.is_empty() or not FileAccess.file_exists(exe_path): 
+		return false
 	var is_running := false
 	var output := []
+	var my_pid = OS.get_process_id()
 	
 	match OS.get_name():
 		\"Windows\":
 			var win_path = exe_path.replace(\"/\", \"\\\\\")
 			var ps_cmd = \"Get-Process | Where-Object { $_.Path -eq '%s' } | Select-Object -ExpandProperty Id\" % win_path
 			OS.execute(\"powershell.exe\", [\"-Command\", ps_cmd], output)
-			if output.size() > 0 and not output[0].strip_edges().is_empty(): is_running = true
-		\"Linux\", \"macOS\", \"FreeBSD\":
-			OS.execute(\"pgrep\", [\"-f\", exe_path], output)
-			if output.size() > 0 and not output[0].strip_edges().is_empty(): is_running = true
+			if output.size() > 0 and not output[0].strip_edges().is_empty(): 
+				is_running = true
+		\"Linux\":
+			OS.execute(\"pgrep\", [\"-f\", exe_path.get_file()], output)
+			if output.size() > 0:
+				var pids = output[0].split(\"\\n\", false)
+				for pid_str in pids:
+					var found_pid = pid_str.strip_edges().to_int()
+					if found_pid > 0 and found_pid != my_pid:
+						var link_out := []
+						OS.execute(\"readlink\", [\"-f\", \"/proc/%d/exe\" % found_pid], link_out)
+						if link_out.size() > 0 and link_out[0].strip_edges() == exe_path:
+							is_running = true
+							break
+							
+		\"macOS\", \"FreeBSD\":
+			OS.execute(\"lsof\", [\"-t\", exe_path], output)
+			if output.size() > 0 and not output[0].strip_edges().is_empty():
+				var pids = output[0].split(\"\\n\", false)
+				for pid_str in pids:
+					var found_pid = pid_str.strip_edges().to_int()
+					if found_pid > 0 and found_pid != my_pid:
+						is_running = true
+						break
 	return is_running
 "
 
@@ -85,6 +116,7 @@ func _is_engine_running(exe_path: String) -> bool:
 script/source = "extends Button
 
 var _edit_mode : bool = false
+@export var _icon_texture : TextureRect
 
 func _ready() -> void:
 	hide()
@@ -93,15 +125,52 @@ func _ready() -> void:
 func _edit_mode_enable() -> void:
 	_edit_mode = !_edit_mode
 	visible = _edit_mode
+
+func disable() -> void:
+	_icon_texture.hide()
+	disabled = true
 "
 
-[node name="version_1" type="Panel" unique_id=241060482 node_paths=PackedStringArray("_launch_button", "_problem_detected_button", "_hint", "_label_name", "_icon_texture", "_remove_button")]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ompp8"]
+shader = ExtResource("6_gwg10")
+shader_parameter/edge_smoothing = 0.01
+
+[sub_resource type="Gradient" id="Gradient_e77bd"]
+colors = PackedColorArray(0, 0, 0, 0.31764707, 0, 0, 0, 0.31764707)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_4rqmj"]
+gradient = SubResource("Gradient_e77bd")
+width = 13
+height = 13
+
+[sub_resource type="Gradient" id="Gradient_5gk3a"]
+colors = PackedColorArray(0.8627451, 0.8627451, 0.8627451, 1, 0.8627451, 0.8627451, 0.8627451, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_d3lir"]
+gradient = SubResource("Gradient_5gk3a")
+width = 13
+height = 13
+
+[sub_resource type="GDScript" id="GDScript_e2crn"]
+script/source = "extends TextureProgressBar
+
+func _ready() -> void:
+	hide()
+	value = 0
+
+func update_progress(percent: float) -> void:
+	if not visible: show()
+	value = percent
+"
+
+[node name="version_1" type="Panel" unique_id=241060482 node_paths=PackedStringArray("_launch_button", "_problem_detected_button", "_hint", "_texture_bar", "_label_name", "_icon_texture", "_remove_button")]
 custom_minimum_size = Vector2(0, 72)
 theme_override_styles/panel = ExtResource("1_2r1el")
 script = SubResource("GDScript_2r1el")
 _launch_button = NodePath("HBoxContainer/edit_project")
 _problem_detected_button = NodePath("HBoxContainer/problem_detected_button")
 _hint = NodePath("HBoxContainer/remove_project/hint")
+_texture_bar = NodePath("HBoxContainer/remove_project/TextureProgressBar")
 _label_name = NodePath("HBoxContainer/RichLabelText")
 _icon_texture = NodePath("HBoxContainer/icon")
 _remove_button = NodePath("HBoxContainer/remove_project")
@@ -134,7 +203,7 @@ bbcode_enabled = true
 text = "[s]Godot engine 4.6.1[/s]"
 vertical_alignment = 1
 
-[node name="remove_project" type="Button" parent="HBoxContainer" unique_id=1147381352]
+[node name="remove_project" type="Button" parent="HBoxContainer" unique_id=1147381352 node_paths=PackedStringArray("_icon_texture")]
 custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
 size_flags_vertical = 4
@@ -142,6 +211,7 @@ theme = ExtResource("3_aoypn")
 theme_override_font_sizes/font_size = 14
 text = "  "
 script = SubResource("GDScript_vrk3i")
+_icon_texture = NodePath("icon")
 
 [node name="icon" type="TextureRect" parent="HBoxContainer/remove_project" unique_id=815318469]
 layout_mode = 1
@@ -167,6 +237,28 @@ offset_bottom = 13.0
 grow_vertical = 2
 _display_time = 3.0
 
+[node name="TextureProgressBar" type="TextureProgressBar" parent="HBoxContainer/remove_project" unique_id=661024866]
+visible = false
+material = SubResource("ShaderMaterial_ompp8")
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -7.0
+offset_top = -6.5
+offset_right = 6.0
+offset_bottom = 8.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+value = 39.0
+fill_mode = 4
+texture_under = SubResource("GradientTexture2D_4rqmj")
+texture_progress = SubResource("GradientTexture2D_d3lir")
+script = SubResource("GDScript_e2crn")
+
 [node name="edit_project" type="Button" parent="HBoxContainer" unique_id=1341672522]
 custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
@@ -174,7 +266,7 @@ size_flags_vertical = 4
 theme = ExtResource("5_ompp8")
 theme_override_font_sizes/font_size = 14
 disabled = true
-text = "Запустить"
+text = "#btn_launch"
 
 [node name="problem_detected_button" parent="HBoxContainer" unique_id=1963035364 instance=ExtResource("7_vrk3i")]
 layout_mode = 2

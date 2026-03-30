@@ -42,8 +42,8 @@ func set_version_text(value: String) -> void:
 	_version_text_label = value
 	if _version_text: _version_text.text = _version_text_label
 	var pure_version: String = _version_text_label.replace(\"Godot engine \", \"\").strip_edges()
-	if pure_version in VersionControl.get_all_versions(): if _download_button: _download_button.text = \"Переустановить\"
-	else: if _download_button: _download_button.text = \"Загрузить\"
+	if pure_version in VersionControl.get_all_versions(): if _download_button: _download_button.text = \"#btn_reinstall\"
+	else: if _download_button: _download_button.text = \"#btn_download\"
 
 func _download() -> void:
 	if _link.is_empty(): return
@@ -85,7 +85,7 @@ func _cancel_download() -> void:
 	if _break_button: _break_button.hide()
 	
 	_download_button.disabled = false
-	_download_button.text = \"Загрузить\"
+	_download_button.text = \"#btn_download\"
 
 func _on_download_completed(result: int, response_code: int, _headers: PackedStringArray, _body: PackedByteArray, node: HTTPRequest, zip_path: String) -> void:
 	if is_instance_valid(node): node.queue_free()
@@ -95,7 +95,7 @@ func _on_download_completed(result: int, response_code: int, _headers: PackedStr
 	else:
 		is_downloading = false
 		_download_button.disabled = false
-		_download_button.text = \"Ошибка\"
+		_download_button.text = \"#err_title\"
 		if _progress_bar: _progress_bar.hide()
 
 func _unzip_and_cleanup(zip_path: String) -> void:
@@ -110,7 +110,7 @@ func _unzip_and_cleanup(zip_path: String) -> void:
 	if err != OK:
 		is_downloading = false
 		_download_button.disabled = false
-		_download_button.text = \"Ошибка\"
+		_download_button.text = \"#err_title\"
 		if _progress_bar: _progress_bar.hide()
 		return
 		
@@ -149,13 +149,15 @@ func _unzip_and_cleanup(zip_path: String) -> void:
 	EventBus.version_update.emit()
 	is_downloading = false
 	_download_button.disabled = false
-	_download_button.text = \"Переустановить\"
+	_download_button.text = \"#btn_reinstall\"
 	if _progress_bar: _progress_bar.hide()
 
 func _is_executable(file_name: String) -> bool:
-	var lower_name = file_name.to_lower()
-	if OS.get_name() == \"Windows\": return lower_name.ends_with(\".exe\") and not \"console\" in lower_name
-	return not lower_name.contains(\".\") or lower_name.ends_with(\".x86_64\")
+	var lower_name = file_name.get_file().to_lower()
+	if not lower_name.begins_with(\"godot_\"): return false
+	if OS.get_name() == \"Windows\":
+		return lower_name.ends_with(\".exe\") and not \"console\" in lower_name
+	return lower_name.ends_with(\"x86_64\") or lower_name.ends_with(\"x11.64\") or lower_name.ends_with(\"x11.32\")
 "
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_1ubim"]
@@ -244,7 +246,7 @@ size_flags_horizontal = 4
 size_flags_vertical = 4
 theme = ExtResource("3_1ubim")
 theme_override_font_sizes/font_size = 12
-text = "Загрузить"
+text = "#btn_download"
 
 [node name="TextureProgressBar" type="TextureProgressBar" parent="HBoxContainer/download_button" unique_id=1261762653]
 material = SubResource("ShaderMaterial_1ubim")

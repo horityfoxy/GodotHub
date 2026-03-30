@@ -1,1 +1,4 @@
-s.godot/
+.godot
+*.import
+desktop.ini
+Thumbs.db

@@ -43,3 +43,13 @@ signal fix_path_activate(id : String, is_engine_mode)
 ## VERSION CHANGER ##
 @warning_ignore("unused_signal")
 signal version_change(id : String)
+
+## ICONS CHANGER SIGNAL ##
+@warning_ignore("unused_signal")
+signal change_icon_required(id : String)
+
+## NOTIFICATIONS SIGNALS ##
+@warning_ignore("unused_signal")
+signal new_version_godot_hub_found
+@warning_ignore("unused_signal")
+signal new_version_godot_hub_install_start

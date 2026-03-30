@@ -3,7 +3,7 @@ extends Node
 @warning_ignore("unused_signal")
 signal internet_allowed
 
-const version : String = "0.9.7"
+const version : String = "1.0.0"
 const SAVE_PATH = "user://installed_versions.json"
 
 var _versions_data: Dictionary = {}
@@ -18,7 +18,9 @@ func _ready() -> void:
 func add_engine_version(version_id: String, executable_path: String, engine_name: String = "", icon_path: String = "") -> void:
 	if not _versions_data.has(version_id): _versions_data[version_id] = {}
 	if engine_name.is_empty(): engine_name = "Godot " + version_id
-		
+	
+	make_file_executable(executable_path)
+	
 	_versions_data[version_id]["path"] = executable_path
 	_versions_data[version_id]["name"] = engine_name
 	_versions_data[version_id]["icon"] = icon_path
@@ -106,24 +108,53 @@ func load_data() -> void:
 				if not _versions_data[v_key].has("icon"): _versions_data[v_key]["icon"] = ""
 	else: print("Error parsing: ", json.get_error_message())
 
-func remove_engine_folder(folder_name: String) -> int:
-	EventBus.godot_installed_version_changed.emit()
+func remove_engine_folder_async(folder_name: String, progress_callback: Callable) -> void:
 	var full_path: String = "user://engines/".path_join(folder_name)
-	var dir = DirAccess.open(full_path)
-	if not dir: return ERR_CANT_OPEN 
+	var files: Array[String] = []
+	var dirs: Array[String] = []
+	_collect_paths_recursive(full_path, files, dirs)
+	dirs.append(full_path)
+	dirs.sort_custom(func(a, b): return a.length() > b.length())
+	
+	var total_items = files.size() + dirs.size()
+	if total_items == 0:
+		if progress_callback.is_valid(): progress_callback.call(100.0)
+		return
+	var current_item = 0
+	var batch_size = 30
+	for f in files:
+		DirAccess.remove_absolute(f)
+		current_item += 1
+		if current_item % batch_size == 0:
+			if progress_callback.is_valid(): 
+				progress_callback.call(float(current_item) / total_items * 100.0)
+			await get_tree().process_frame
+	
+	for d in dirs:
+		DirAccess.remove_absolute(d)
+		current_item += 1
+		if current_item % batch_size == 0:
+			if progress_callback.is_valid(): 
+				progress_callback.call(float(current_item) / total_items * 100.0)
+			await get_tree().process_frame
+			
+	if progress_callback.is_valid(): 
+		progress_callback.call(100.0)
+	EventBus.godot_installed_version_changed.emit()
+
+func _collect_paths_recursive(path: String, files: Array[String], dirs: Array[String]) -> void:
+	var dir = DirAccess.open(path)
+	if not dir: return
 	dir.list_dir_begin()
 	var item = dir.get_next()
 	while item != "":
 		if item != "." and item != "..":
+			var item_path = path.path_join(item)
 			if dir.current_is_dir():
-				var res = remove_engine_folder(folder_name.path_join(item))
-				if res != OK: return res
-			else:
-				var res = dir.remove(item)
-				if res != OK: return res
+				dirs.append(item_path)
+				_collect_paths_recursive(item_path, files, dirs)
+			else: files.append(item_path)
 		item = dir.get_next()
-	dir = null
-	return DirAccess.remove_absolute(full_path)
 
 func _cleanup_temp_archives() -> void:
 	var path: String = "user://engines/"
@@ -136,3 +167,10 @@ func _cleanup_temp_archives() -> void:
 				var err = dir.remove(file)
 				if err != OK: printerr("ERROR: Can't remove temp archive: ", file)
 				else: print("CLEANER: temp archive has remove: ", file)
+
+func make_file_executable(file_path: String) -> void:
+	if OS.get_name() == "Linux" or OS.get_name() == "macOS":
+		var global_path = ProjectSettings.globalize_path(file_path)
+		var output = []
+		OS.execute("chmod", ["+x", global_path], output)
+		print("Права на исполнение выданы для: ", global_path)

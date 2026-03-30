@@ -41,7 +41,7 @@ alignment = 1
 [node name="Label" type="Label" parent="Panel/VBoxContainer" unique_id=1611337626]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.851769, 0.8517689, 0.85176885, 1)
-text = "В процессе..."
+text = "#status_in_progress"
 
 [node name="ProgressBar" type="ProgressBar" parent="Panel/VBoxContainer" unique_id=713747719]
 layout_mode = 2
