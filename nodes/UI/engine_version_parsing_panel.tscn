@@ -153,9 +153,11 @@ func _unzip_and_cleanup(zip_path: String) -> void:
 	if _progress_bar: _progress_bar.hide()
 
 func _is_executable(file_name: String) -> bool:
-	var lower_name = file_name.to_lower()
-	if OS.get_name() == \"Windows\": return lower_name.ends_with(\".exe\") and not \"console\" in lower_name
-	return not lower_name.contains(\".\") or lower_name.ends_with(\".x86_64\")
+	var lower_name = file_name.get_file().to_lower()
+	if not lower_name.begins_with(\"godot_\"): return false
+	if OS.get_name() == \"Windows\":
+		return lower_name.ends_with(\".exe\") and not \"console\" in lower_name
+	return lower_name.ends_with(\"x86_64\") or lower_name.ends_with(\"x11.64\") or lower_name.ends_with(\"x11.32\")
 "
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_1ubim"]

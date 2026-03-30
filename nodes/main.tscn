@@ -903,18 +903,30 @@ Remove-Item $MyInvocation.MyCommand.Path -Force
 
 func _create_linux_sh(base_dir: String, temp_dir: String, exe_name: String) -> void:
 	var sh_path = base_dir.path_join(\"updater.sh\")
+	var my_pid = OS.get_process_id()
+	var exe_full = base_dir.path_join(exe_name)
 	var sh_content = \"\"\"#!/bin/bash
-sleep 2
-cp -rn \"%s/\"* \"%s/\"
+#
+while kill -0 %d 2>/dev/null; do
+    sleep 1
+done
+cp -rf \"%s/\"* \"%s/\"
 rm -rf \"%s\"
 chmod +x \"%s\"
 \"%s\" &
 rm -- \"$0\"
-\"\"\" % [temp_dir, base_dir, temp_dir, base_dir.path_join(exe_name), base_dir.path_join(exe_name)]
+\"\"\" % [my_pid, temp_dir, base_dir, temp_dir, exe_full, exe_full]
+
 	var f = FileAccess.open(sh_path, FileAccess.WRITE)
-	f.store_string(sh_content)
-	f.close()
-	OS.execute(\"chmod\", [\"+x\", sh_path])
+	if f:
+		f.store_string(sh_content)
+		f.close()
+		
+	# Делаем сам скрипт исполняемым
+	var output = []
+	OS.execute(\"chmod\", [\"+x\", sh_path], output)
+	
+	# Запускаем скрипт
 	OS.create_process(\"/bin/bash\", [sh_path])
 "
 
@@ -2185,6 +2197,7 @@ horizontal_alignment = 1
 uppercase = true
 
 [node name="popup_window" type="Control" parent="." unique_id=182114234 node_paths=PackedStringArray("_blur", "_drag_and_drop_window", "_settings_window", "_get_new_version_window", "_fix_path_window", "_swich_project_version", "_new_icon_window")]
+visible = false
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -2214,6 +2227,7 @@ color = Color(0.03529412, 0.03529412, 0.03529412, 0.3372549)
 script = SubResource("GDScript_cmhxe")
 
 [node name="drag_and_drop_project" type="Control" parent="popup_window" unique_id=1795121393 node_paths=PackedStringArray("_close_window_button", "_drag_and_drop_window")]
+visible = false
 z_index = 1
 layout_mode = 1
 anchors_preset = 15
@@ -2375,6 +2389,7 @@ layout_mode = 1
 script = null
 
 [node name="settings" type="Control" parent="popup_window" unique_id=1532549054 node_paths=PackedStringArray("_settings_window")]
+visible = false
 z_index = 1
 layout_mode = 1
 anchors_preset = 15
@@ -2553,6 +2568,7 @@ layout_mode = 1
 layout_mode = 2
 
 [node name="about_window" type="Panel" parent="popup_window/settings" unique_id=266747320 node_paths=PackedStringArray("_view_window", "_godot_hub_button", "_lineseedjp_button", "_godot_engine_button", "_about_program_button", "_close_about_window_button", "_update_button")]
+visible = false
 custom_minimum_size = Vector2(600, 388)
 layout_mode = 1
 anchors_preset = -1

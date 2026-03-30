@@ -79,6 +79,7 @@ func _is_engine_running(exe_path: String) -> bool:
 	var is_running := false
 	var output := []
 	var my_pid = OS.get_process_id()
+	
 	match OS.get_name():
 		\"Windows\":
 			var win_path = exe_path.replace(\"/\", \"\\\\\")
@@ -86,17 +87,28 @@ func _is_engine_running(exe_path: String) -> bool:
 			OS.execute(\"powershell.exe\", [\"-Command\", ps_cmd], output)
 			if output.size() > 0 and not output[0].strip_edges().is_empty(): 
 				is_running = true
-		\"Linux\", \"macOS\", \"FreeBSD\":
-			OS.execute(\"pgrep\", [\"-f\", exe_path], output)
-			
+		\"Linux\":
+			OS.execute(\"pgrep\", [\"-f\", exe_path.get_file()], output)
 			if output.size() > 0:
+				var pids = output[0].split(\"\\n\", false)
+				for pid_str in pids:
+					var found_pid = pid_str.strip_edges().to_int()
+					if found_pid > 0 and found_pid != my_pid:
+						var link_out := []
+						OS.execute(\"readlink\", [\"-f\", \"/proc/%d/exe\" % found_pid], link_out)
+						if link_out.size() > 0 and link_out[0].strip_edges() == exe_path:
+							is_running = true
+							break
+							
+		\"macOS\", \"FreeBSD\":
+			OS.execute(\"lsof\", [\"-t\", exe_path], output)
+			if output.size() > 0 and not output[0].strip_edges().is_empty():
 				var pids = output[0].split(\"\\n\", false)
 				for pid_str in pids:
 					var found_pid = pid_str.strip_edges().to_int()
 					if found_pid > 0 and found_pid != my_pid:
 						is_running = true
 						break
-						
 	return is_running
 "
 
