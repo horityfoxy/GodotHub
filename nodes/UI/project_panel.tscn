@@ -227,10 +227,13 @@ func load_tag():
 		var _spawned_tag = _tag_scene.instantiate()
 		add_child(_spawned_tag)
 		_spawned_tag.set_project_id(_project_id) 
-		
 		_spawned_tag.set_tag_text(tag_data[\"name\"])
-		var color_str = \"Color\" + tag_data[\"color\"]
-		_spawned_tag.set_color(str_to_var(color_str))
+		var raw_color: String = tag_data.get(\"color\", \"0e55c2\")
+		var final_color: Color
+		if raw_color.begins_with(\"(\"): final_color = str_to_var(\"Color\" + raw_color)
+		else: final_color = Color(raw_color)
+			
+		_spawned_tag.set_color(final_color)
 		if _spawned_tag.has_signal(\"tag_created\"):
 			_spawned_tag.tag_created.connect(_show_create_tag_button)
 		if _spawned_tag.has_method(\"off_settings_window\"):

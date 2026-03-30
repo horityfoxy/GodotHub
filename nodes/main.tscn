@@ -8,6 +8,7 @@
 [ext_resource type="Texture2D" uid="uid://e7wkwvbepdoa" path="res://src/sprites/drag_and_drop/drag_and_drop_icon.svg" id="3_ufc4x"]
 [ext_resource type="StyleBox" uid="uid://bm2eusnrvc8qe" path="res://src/themes/horityfox/panels/window_drag_and_drop.tres" id="4_y2wr3"]
 [ext_resource type="StyleBox" uid="uid://1pka6kavqbsg" path="res://src/themes/horityfox/panels/engine_parcing_version_panel.tres" id="6_d4yno"]
+[ext_resource type="PackedScene" uid="uid://b8qkgmokb4bao" path="res://nodes/UI/notification_update.tscn" id="6_jfcuo"]
 [ext_resource type="Theme" uid="uid://c06aoxshvcfhh" path="res://src/themes/horityfox/buttons/blue/blue_button.tres" id="8_c3m70"]
 [ext_resource type="Theme" uid="uid://bme18nb43kckb" path="res://src/themes/horityfox/buttons/gray/gray_button.tres" id="8_t4bcl"]
 [ext_resource type="FontFile" uid="uid://crxptqsk1pq64" path="res://src/fonts/LINESeedJP/LINESeedJP-Bold.ttf" id="10_h0f1k"]
@@ -136,11 +137,11 @@ func _ready() -> void:
 	add_project_button.pressed.connect(func(): EventBus.drag_and_drop_window_enable.emit())
 	EventBus.ui_project_list_updated.connect(_check_visibility)
 	EventBus.project_removed.connect(_check_visibility)
-	EventBus.project_found.connect(func(_path): _check_visibility())
+	EventBus.project_found.connect(_check_visibility.unbind(1))
 	_check_visibility()
 
 func _check_visibility() -> void:
-	if SaveSystem.get_all_projects().size() > 0 or _project_list.get_child_count() > 1:
+	if not SaveSystem.get_all_projects().is_empty():
 		_hint.hide()
 		_project_list.show()
 	else:
@@ -748,10 +749,10 @@ func _on_api_response(_result: int, response_code: int, _headers: PackedStringAr
 			if _is_version_newer(latest_version, VersionControl.version):
 				print(\"Update found: v\", latest_version)
 				_latest_release_data = json
-				if update_button:
-					update_button.show()
-					if not update_button.pressed.is_connected(_on_update_button_pressed):
-						update_button.pressed.connect(_on_update_button_pressed)
+				update_button.show()
+				EventBus.new_version_godot_hub_found.emit()
+				if not update_button.pressed.is_connected(_on_update_button_pressed):
+					update_button.pressed.connect(_on_update_button_pressed)
 	else: push_error(\"API Error: \", response_code)
 
 func _is_version_newer(latest: String, current: String) -> bool:
@@ -766,9 +767,8 @@ func _is_version_newer(latest: String, current: String) -> bool:
 	return false
 
 func _on_update_button_pressed() -> void:
-	if update_button:
-		update_button.disabled = true
-		update_button.text = \"  \"
+	update_button.disabled = true
+	update_button.text = \"  \"
 	_start_download(_latest_release_data)
 
 func _start_download(json_data: Dictionary) -> void:
@@ -1686,7 +1686,14 @@ func disable() -> void:
 	close_window.emit()
 
 func _enable_scan() -> void:
-	parser_system.open_image_selector()
+	var project_path := \"\"
+	_close_button.disabled = true
+	_set_icon_button.disabled = true
+	_done.disabled = true
+	if _id != \"\":
+		var project_data: Dictionary = SaveSystem.get_project_by_id(_id)
+		project_path = project_data.get(\"path\", \"\")
+	parser_system.open_image_selector(project_path)
 
 func _on_image_loaded(new_path: String) -> void:
 	_path = new_path
@@ -1707,6 +1714,11 @@ signal image_loaded(path: String)
 
 @export var _icon_preview: TextureRect
 
+@export_category(\"Buttons\")
+@export var _set_icon_button : Button
+@export var _close_button : Button
+@export var _done : Button
+
 var _file_dialog: FileDialog
 
 func _ready() -> void:
@@ -1715,6 +1727,7 @@ func _ready() -> void:
 func setup_file_dialog() -> void:
 	_file_dialog = FileDialog.new()
 	_file_dialog.use_native_dialog = true 
+	_file_dialog.canceled.connect(_disable_buttons.bind(false))
 	_file_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
 	_file_dialog.access = FileDialog.ACCESS_FILESYSTEM
 	
@@ -1725,12 +1738,26 @@ func setup_file_dialog() -> void:
 	_file_dialog.file_selected.connect(_on_file_selected)
 	add_child(_file_dialog)
 
-func open_image_selector() -> void:
-	if _file_dialog: 
-		_file_dialog.popup_centered()
+func open_image_selector(start_path: String = \"\") -> void:
+	if not _file_dialog: return
+	if not start_path.is_empty():
+		var target_dir := start_path
+		if not DirAccess.dir_exists_absolute(target_dir):
+			target_dir = start_path.get_base_dir()
+		
+		if DirAccess.dir_exists_absolute(target_dir):
+			_file_dialog.current_dir = target_dir
+
+	_file_dialog.popup_centered()
+
+func _disable_buttons(value : bool) -> void:
+	_close_button.disabled = value
+	_set_icon_button.disabled = value
+	_done.disabled = value
 
 func _on_file_selected(path: String) -> void:
 	_load_external_image(path)
+	_disable_buttons(false)
 
 func _load_external_image(path: String) -> void:
 	if not FileAccess.file_exists(path):
@@ -1943,6 +1970,9 @@ texture = ExtResource("1_xpfdc")
 expand_mode = 4
 stretch_mode = 5
 
+[node name="notification_update" parent="layout/header/settings" unique_id=691297418 instance=ExtResource("6_jfcuo")]
+layout_mode = 1
+
 [node name="spacer3" type="Control" parent="layout/header" unique_id=1352316719]
 layout_mode = 2
 
@@ -2140,7 +2170,6 @@ horizontal_alignment = 1
 uppercase = true
 
 [node name="popup_window" type="Control" parent="." unique_id=182114234 node_paths=PackedStringArray("_blur", "_drag_and_drop_window", "_settings_window", "_get_new_version_window", "_fix_path_window", "_swich_project_version", "_new_icon_window")]
-visible = false
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -2454,7 +2483,6 @@ popup/item_13/id = 13
 script = SubResource("GDScript_u7ggc")
 
 [node name="theme" type="HBoxContainer" parent="popup_window/settings/settings_window/VBoxContainer2/BG/VBoxContainer/VBoxContainer" unique_id=1705096437]
-visible = false
 layout_mode = 2
 
 [node name="Label" type="Label" parent="popup_window/settings/settings_window/VBoxContainer2/BG/VBoxContainer/VBoxContainer/theme" unique_id=185104013]
@@ -2504,6 +2532,9 @@ text = "#btn_close"
 layout_mode = 2
 theme = ExtResource("8_c3m70")
 text = "#tab_about"
+
+[node name="notification_update" parent="popup_window/settings/settings_window/VBoxContainer2/HBoxContainer/about" unique_id=868025667 instance=ExtResource("6_jfcuo")]
+layout_mode = 1
 
 [node name="Control" type="Control" parent="popup_window/settings/settings_window/VBoxContainer2" unique_id=242661791]
 layout_mode = 2
@@ -2628,6 +2659,9 @@ texture_under = SubResource("GradientTexture2D_2toya")
 texture_progress = SubResource("GradientTexture2D_jfcuo")
 script = SubResource("GDScript_tvfxn")
 
+[node name="notification_update" parent="popup_window/settings/about_window/HBoxContainer/VBoxContainer/update" unique_id=202833617 instance=ExtResource("6_jfcuo")]
+layout_mode = 1
+
 [node name="close" type="Button" parent="popup_window/settings/about_window/HBoxContainer/VBoxContainer" unique_id=29047539]
 layout_mode = 2
 theme = ExtResource("8_t4bcl")
@@ -2746,7 +2780,6 @@ theme = ExtResource("8_t4bcl")
 text = "#btn_yes"
 
 [node name="download_godot_window" type="Control" parent="popup_window" unique_id=9572961 node_paths=PackedStringArray("control_bridge", "_close_button")]
-visible = false
 z_index = 1
 layout_mode = 1
 anchors_preset = 15
@@ -2880,6 +2913,7 @@ theme_override_font_sizes/font_size = 14
 text = "#btn_allow"
 
 [node name="parcing" type="VBoxContainer" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/bridge" unique_id=974929392 node_paths=PackedStringArray("check_godot_4", "check_godot_3", "_parcing_window", "_parcing_hint")]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -2999,6 +3033,7 @@ text = "#status_searching"
 
 [node name="no_internet_window" type="Control" parent="popup_window/download_godot_window/window/VBoxContainer/HBoxContainer/bridge" unique_id=1709420593 node_paths=PackedStringArray("_start_parsing", "_parcing_window", "_parcing_hint")]
 visible = false
+z_index = 1
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -3437,9 +3472,12 @@ _icon_preview = NodePath("window/HBoxContainer/BG/icon")
 _path_hint = NodePath("window/HBoxContainer/VBoxContainer/HBoxContainer/path_hint")
 parser_system = NodePath("icon_parcer")
 
-[node name="icon_parcer" type="Node" parent="popup_window/new_icon_window" unique_id=92458862 node_paths=PackedStringArray("_icon_preview")]
+[node name="icon_parcer" type="Node" parent="popup_window/new_icon_window" unique_id=92458862 node_paths=PackedStringArray("_icon_preview", "_set_icon_button", "_close_button", "_done")]
 script = SubResource("GDScript_81hqf")
 _icon_preview = NodePath("../window/HBoxContainer/BG/icon")
+_set_icon_button = NodePath("../window/HBoxContainer/VBoxContainer/HBoxContainer/locate")
+_close_button = NodePath("../window/HBoxContainer/VBoxContainer/HBoxContainer/close")
+_done = NodePath("../window/HBoxContainer/VBoxContainer/HBoxContainer/next")
 
 [node name="window" type="Panel" parent="popup_window/new_icon_window" unique_id=189781026]
 layout_mode = 1

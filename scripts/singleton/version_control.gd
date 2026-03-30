@@ -3,7 +3,7 @@ extends Node
 @warning_ignore("unused_signal")
 signal internet_allowed
 
-const version : String = "1.0.0"
+const version : String = "0.0.0"
 const SAVE_PATH = "user://installed_versions.json"
 
 var _versions_data: Dictionary = {}
@@ -18,7 +18,9 @@ func _ready() -> void:
 func add_engine_version(version_id: String, executable_path: String, engine_name: String = "", icon_path: String = "") -> void:
 	if not _versions_data.has(version_id): _versions_data[version_id] = {}
 	if engine_name.is_empty(): engine_name = "Godot " + version_id
-		
+	
+	make_file_executable(executable_path)
+	
 	_versions_data[version_id]["path"] = executable_path
 	_versions_data[version_id]["name"] = engine_name
 	_versions_data[version_id]["icon"] = icon_path
@@ -165,3 +167,10 @@ func _cleanup_temp_archives() -> void:
 				var err = dir.remove(file)
 				if err != OK: printerr("ERROR: Can't remove temp archive: ", file)
 				else: print("CLEANER: temp archive has remove: ", file)
+
+func make_file_executable(file_path: String) -> void:
+	if OS.get_name() == "Linux" or OS.get_name() == "macOS":
+		var global_path = ProjectSettings.globalize_path(file_path)
+		var output = []
+		OS.execute("chmod", ["+x", global_path], output)
+		print("Права на исполнение выданы для: ", global_path)

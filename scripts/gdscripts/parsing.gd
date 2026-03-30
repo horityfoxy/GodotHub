@@ -112,6 +112,12 @@ func _compare_versions(a: Dictionary, b: Dictionary) -> bool:
 		if v1[i] < v2[i]: return false
 	return v1.size() > v2.size()
 
+func make_file_executable(file_path: String) -> void:
+	if OS.get_name() == "Linux" or OS.get_name() == "macOS":
+		var output = []
+		OS.execute("chmod", ["+x", file_path], output)
+		print("Права на исполнение выданы для: ", file_path)
+
 func _version_to_int_array(version_string: String) -> Array:
 	var clean = version_string.get_slice("-", 0).replace("v", "")
 	var parts = clean.split(".")

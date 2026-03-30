@@ -47,3 +47,7 @@ signal version_change(id : String)
 ## ICONS CHANGER SIGNAL ##
 @warning_ignore("unused_signal")
 signal change_icon_required(id : String)
+
+## NOTIFICATIONS SIGNALS ##
+@warning_ignore("unused_signal")
+signal new_version_godot_hub_found
